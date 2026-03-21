@@ -33,7 +33,7 @@ button {
 }
 
 .app-shell {
-  width: min(1680px, calc(100vw - 18px));
+  width: min(1500px, calc(100vw - 22px));
   margin: 14px auto 28px;
 }
 
@@ -54,7 +54,7 @@ button {
 .eyebrow {
   margin: 0 0 8px;
   color: rgba(255, 239, 214, 0.8);
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -110,7 +110,7 @@ button {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.85fr) 360px;
+  grid-template-columns: minmax(0, 1.95fr) 320px;
   gap: 18px;
   margin-top: 18px;
 }
@@ -192,7 +192,7 @@ button {
   border-radius: 999px;
   background: rgba(163, 54, 39, 0.12);
   color: #9f3426;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -204,11 +204,11 @@ button {
 .table-board {
   position: relative;
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) 320px;
-  grid-template-rows: minmax(500px, 1fr) auto;
-  gap: 18px;
-  margin-top: 14px;
-  padding: 18px;
+  grid-template-columns: 284px minmax(0, 1fr) 284px;
+  grid-template-rows: minmax(450px, 1fr) auto;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 12px;
   border-radius: 26px;
   background:
     radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 36%),
@@ -231,7 +231,7 @@ button {
   border-radius: 22px;
   background: rgba(255, 248, 236, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 14px;
+  padding: 12px;
   backdrop-filter: blur(8px);
 }
 
@@ -267,7 +267,7 @@ button {
 
 .field-read {
   margin: 0;
-  max-width: 340px;
+  max-width: 300px;
   color: rgba(255, 247, 233, 0.78);
   font-size: 14px;
   line-height: 1.5;
@@ -276,9 +276,9 @@ button {
 
 .field-area {
   display: grid;
-  grid-template-columns: repeat(4, minmax(88px, 1fr));
+  grid-template-columns: repeat(4, minmax(76px, 1fr));
   gap: 12px;
-  min-height: 430px;
+  min-height: 370px;
   padding: 18px;
   border-radius: 24px;
   background: rgba(11, 34, 27, 0.18);
@@ -294,8 +294,8 @@ button {
 
 .stock-pile {
   position: relative;
-  width: 70px;
-  height: 102px;
+  width: 62px;
+  height: 92px;
 }
 
 .stock-pile::before,
@@ -339,12 +339,12 @@ button {
 }
 
 .seat-name {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
 }
 
 .seat-score {
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 245, 232, 0.84);
 }
 
@@ -356,7 +356,7 @@ button {
 .seat-comment {
   margin: 0 0 6px;
   color: rgba(255, 247, 237, 0.76);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -563,12 +563,12 @@ button {
 
 .card-shell {
   position: relative;
-  width: 88px;
+  width: 78px;
   flex: 0 0 auto;
 }
 
 .card-shell.small {
-  width: 72px;
+  width: 64px;
 }
 
 .card-visual {
@@ -711,7 +711,7 @@ button {
 }
 
 .card-shell.hidden {
-  width: 62px;
+  width: 56px;
 }
 
 .card-shell.hidden .card-visual {
@@ -754,7 +754,7 @@ button {
 }
 
 .tutor-summary {
-  padding: 16px 18px;
+  padding: 14px 16px;
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(255, 244, 224, 0.96), rgba(244, 228, 199, 0.96));
   border: 1px solid rgba(214, 155, 42, 0.22);
@@ -986,7 +986,7 @@ button {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 
@@ -1103,7 +1103,7 @@ button {
 .go-stop-option {
   display: grid;
   gap: 8px;
-  padding: 14px;
+  padding: 12px;
   border-radius: 18px;
   background: rgba(255, 250, 242, 0.94);
   border: 1px solid rgba(88, 57, 33, 0.12);
@@ -1145,7 +1145,7 @@ button {
 
 .left-seat .opponent-captured-strip .captured-layout,
 .right-seat .opponent-captured-strip .captured-layout {
-  min-width: 460px;
+  min-width: 400px;
   grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.15fr) minmax(0, 1.55fr);
 }
 
@@ -1161,11 +1161,11 @@ button {
 }
 
 .left-seat .opponent-captured-strip .captured-bright {
-  transform: translateY(-34px);
+  transform: translateY(-44px);
 }
 
 .right-seat .opponent-captured-strip .captured-bright {
-  transform: translateY(34px);
+  transform: translateY(44px);
 }
 
 .left-seat .opponent-captured-strip .captured-ribbon,
@@ -1177,8 +1177,8 @@ button {
 
 .left-seat .opponent-captured-strip .captured-junk,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-width: 184px;
-  min-height: 188px;
+  min-width: 170px;
+  min-height: 170px;
 }
 
 
@@ -1274,7 +1274,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 360px;
+  min-height: 300px;
   overflow: visible;
 }
 
@@ -1286,7 +1286,7 @@ button {
 }
 
 .side-seat .card-shell.small {
-  width: 54px;
+  width: 48px;
 }
 
 .user-seat {
@@ -1294,17 +1294,17 @@ button {
 }
 
 .user-seat .card-shell {
-  width: 80px;
+  width: 74px;
 }
 
 .user-seat .play-card-btn {
-  min-width: 82px;
+  min-width: 74px;
   padding: 7px 10px;
 }
 
 .user-seat .seat-comment,
 .user-seat .user-help {
-  font-size: 13px;
+  font-size: 12px;
 }
 
 @keyframes fieldDropFromBottom {
@@ -1464,7 +1464,7 @@ button {
 
 .score-line span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .chat-panel {
