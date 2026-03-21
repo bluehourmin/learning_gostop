@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>고스돕 튜터 테이블</title>
+  <title>고스돕 튜터 테이블 - 쉽게 배우는 고스톱</title>
+  <meta name="description" content="고스톱 규칙을 쉽게 배우는 튜터링 사이트. 3인 연습판에서 실제 판처럼 카드를 내며 고스톱을 익혀보세요.">
+  <meta name="keywords" content="고스톱, 고스톱 배우기, 고스톱 규칙, 화투, 고스돕 튜터">
+  <meta property="og:title" content="고스돕 튜터 테이블 - 쉽게 배우는 고스톱">
+  <meta property="og:description" content="고스톱 규칙을 쉽게 배우는 튜터링 사이트. 3인 연습판에서 실제 판처럼 카드를 내며 고스톱을 익혀보세요.">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=SUIT:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -26,7 +31,6 @@
         <button id="joker-toggle-btn" class="ghost">조커 켜짐</button>
       </div>
     </header>
-
     <main class="layout">
       <section class="table-panel">
         <div class="table-topbar">
@@ -45,10 +49,8 @@
           </div>
           <button id="next-turn-btn" class="pace-btn next-btn" disabled>다음 턴 보기</button>
         </div>
-
         <div class="table-board">
           <aside id="left-seat" class="seat side-seat"></aside>
-
           <section class="field-zone">
             <div class="field-header">
               <h2>바닥패</h2>
@@ -60,13 +62,10 @@
               <p class="stock-label">뒤집을 패</p>
             </div>
           </section>
-
           <aside id="right-seat" class="seat side-seat"></aside>
-
           <section id="user-seat" class="seat user-seat"></section>
         </div>
       </section>
-
       <section class="sidebar">
         <section class="panel tutor-panel">
           <div class="panel-heading">
@@ -89,7 +88,6 @@
             </article>
           </div>
         </section>
-
         <section class="panel chat-panel">
           <div class="panel-heading">
             <h2>코치와 상의</h2>
@@ -100,14 +98,12 @@
             <button class="primary chat-send" type="submit">보내기</button>
           </form>
         </section>
-
         <section class="panel log-panel">
           <div class="panel-heading">
             <h2>해설 로그</h2>
           </div>
           <div id="event-log" class="event-log"></div>
         </section>
-
         <details class="panel rules-panel compact-rules">
           <summary class="panel-heading compact-rules-summary">
             <h2>룰 기준</h2>
@@ -117,7 +113,6 @@
       </section>
     </main>
   </div>
-
   <script src="./script.js"></script>
 </body>
 </html>
