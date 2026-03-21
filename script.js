@@ -91,6 +91,7 @@ const app = {
   pace: "slow",
   pendingAiTimeout: null,
   motionTimeout: null,
+  aiWatchdog: null,
   dealerIndex: null
 };
 
@@ -347,6 +348,28 @@ function getMatches(card, field) {
 function countMonth(cards, month) {
   return cards.filter((card) => card.month === month).length;
 }
+function countVisibleMonth(state, player, month) {
+  const fieldCount = countMonth(state.field, month);
+  const myHandCount = countMonth(player.hand, month);
+  const capturedCount = state.players.reduce((sum, seatPlayer) => sum + countMonth(seatPlayer.captured, month), 0);
+  return fieldCount + myHandCount + capturedCount;
+}
+
+function getSafeDiscardReason(state, player, card) {
+  if (!card || card.type === "joker" || card.month <= 0) return "";
+  const visibleCount = countVisibleMonth(state, player, card.month);
+  const myHandCount = countMonth(player.hand, card.month);
+  const othersCaptured = state.players
+    .filter((seatPlayer) => seatPlayer.seat !== player.seat)
+    .reduce((sum, seatPlayer) => sum + countMonth(seatPlayer.captured, card.month), 0);
+  if (visibleCount === 4 && myHandCount >= 2) {
+    return card.month + "월은 이미 공개 정보로 넉 장이 다 읽혔고, 그중 두 장이 내 손에 있어 상대가 맞출 수 없습니다.";
+  }
+  if (visibleCount === 4 && othersCaptured > 0) {
+    return card.month + "월은 이미 밖에 다 나와 있어, 지금 내도 상대가 새로 맞춰 가져갈 여지가 거의 없습니다.";
+  }
+  return "";
+}
 
 function countByType(cards) {
   return cards.reduce((acc, card) => {
@@ -502,10 +525,10 @@ function buildComboWarnings(state) {
 function getNoCaptureDiscardPriority(card) {
   if (!card || card.type === "joker") return 0;
   const label = card.label || "";
-  if (label.includes("비광")) return 10;
-  if (card.month === 10 && card.type === "animal") return 9;
-  if (label.includes("초단") || (card.type === "ribbon" && [4, 5, 7].includes(card.month))) return 8;
-  if (card.month === 11 && card.type === "ribbon") return 4;
+  if (label.includes("비광")) return 18;
+  if (card.month === 10 && card.type === "animal") return 16;
+  if (label.includes("초단") || (card.type === "ribbon" && [4, 5, 7].includes(card.month))) return 14;
+  if (card.month === 11 && card.type === "ribbon") return 8;
   return 0;
 }
 
@@ -616,6 +639,8 @@ function explainExposureReason(state, player, card) {
 
 function evaluateFieldExposure(state, player, card) {
   if (!card || card.type === "joker") return 0;
+  const safeDiscardReason = getSafeDiscardReason(state, player, card);
+  if (safeDiscardReason) return 0.8;
   let penalty = estimateCardValue(card) * 0.45;
   state.players.forEach((opponent) => {
     if (opponent.seat === player.seat) return;
@@ -743,13 +768,10 @@ function groupCapturedCards(cards) {
   const animal = [];
   const ribbon = [];
   const junk = [];
-  const joker = [];
 
   cards.forEach((card) => {
     const effectiveType = getEffectiveType(card);
-    if (card.type === "joker") {
-      joker.push(card);
-    } else if (effectiveType === "bright") {
+    if (effectiveType === "bright") {
       bright.push(card);
     } else if (effectiveType === "animal") {
       animal.push(card);
@@ -760,18 +782,12 @@ function groupCapturedCards(cards) {
     }
   });
 
-  const junkRows = [[], [], []];
-  const rowCaps = [5, 5, Number.POSITIVE_INFINITY];
-  const rowSlots = [0, 0, 0];
-  [...junk, ...joker].forEach((card) => {
-    const value = getJunkValue(card);
-    let rowIndex = rowCaps.findIndex((cap, index) => rowSlots[index] + value <= cap);
-    if (rowIndex === -1) rowIndex = 2;
-    junkRows[rowIndex].push(card);
-    rowSlots[rowIndex] += value;
-  });
+  const junkRows = [];
+  for (let index = 0; index < junk.length; index += 5) {
+    junkRows.push(junk.slice(index, index + 5));
+  }
 
-  return { bright, animal, ribbon, junkRows: junkRows.filter((row) => row.length) };
+  return { bright, animal, ribbon, junkRows };
 }
 
 function renderCapturedLayout(cards) {
@@ -845,11 +861,16 @@ function scoreMove(state, player, card) {
     const exposurePenalty = evaluateFieldExposure(state, player, card);
     const discardValuePenalty = estimateCardValue(card) * (getJunkValue(card) >= 2 ? 2.4 : 1.1);
     const noCapturePriority = getNoCaptureDiscardPriority(card);
-    score -= 8 + exposurePenalty + discardValuePenalty - noCapturePriority;
+    score -= 10 + exposurePenalty + discardValuePenalty - (noCapturePriority * 1.6);
     reasons.push("지금 내면 바닥에 패를 남겨 상대에게 연결 자리를 줍니다.");
+    const safeDiscardReason = getSafeDiscardReason(state, player, card);
+    if (safeDiscardReason) {
+      score += 16;
+      reasons.push(safeDiscardReason);
+    }
     if (getJunkValue(card) >= 2) {
-      score -= 18;
-      reasons.push(card.label + "은 쌍피라 일반 피보다 값이 커서, 막판이 아니면 먼저 버릴 카드가 아닙니다.");
+      score -= 34;
+      reasons.push(card.label + "은 쌍피라 일반 피보다 값이 커서, 먹을 게 없는 턴에도 우선순위를 크게 내려야 합니다.");
     } else {
       const brokenComboReason = explainBrokenComboDiscard(state, player, card);
       if (brokenComboReason) {
@@ -1125,6 +1146,28 @@ function buildPayoutSummary(state, winner) {
   return { base, total, detail, reasons, wonByJunk, losers, settlementScore };
 }
 
+function getOpponentGoStopStatus(state, player) {
+  const canStopNow = RULE_CONFIG.enableGoStop && player.score >= RULE_CONFIG.stopThreshold;
+  if (!canStopNow) return null;
+  const suggestion = recommendGoStop(state, player.seat, { useLookahead: false });
+  const actionLabel = suggestion.action === "go" ? "고 쪽" : "스톱 쪽";
+  const shortReason = suggestion.action === "go"
+    ? (suggestion.goBalance > suggestion.stopBalance
+      ? "한 턴 더 벌 여지가 있습니다"
+      : "고를 볼 수는 있지만 위험도 큽니다")
+    : (player.score === RULE_CONFIG.stopThreshold
+      ? "지금 끊어도 이기는 점수입니다"
+      : "지금 점수를 굳히는 쪽이 낫습니다");
+  return {
+    canStopNow,
+    action: suggestion.action,
+    actionLabel,
+    shortReason,
+    forecast: suggestion.action === "go" ? suggestion.goForecast : suggestion.stopForecast,
+    reason: suggestion.action === "go" ? suggestion.goReason : suggestion.stopReason
+  };
+}
+
 function inferOpponentTrend(player) {
   const evaluated = evaluateScoreBreakdown(player.captured);
   const comboNames = findCompletedNamedCombos(player.captured);
@@ -1160,6 +1203,36 @@ function inferOpponentTrend(player) {
   });
   if (!unique.length) return "아직 한 줄로 확정되진 않았지만 공개패 흐름은 나쁘지 않습니다.";
   return unique.slice(0, 3).join(" · ") + ".";
+}
+
+function formatOpponentRiskLine(state, rival, index) {
+  const brightCount = evaluateScoreBreakdown(rival.player.captured).totals.bright;
+  const status = getOpponentGoStopStatus(state, rival.player);
+  const pieces = [];
+  pieces.push((index + 1) + "순위 " + rival.player.name);
+  pieces.push(rival.trend.replace(/\.$/, ""));
+  if (brightCount >= 2 && !/광 \d+장/.test(rival.trend)) {
+    pieces.push("광 " + brightCount + "장");
+  }
+  if (status) {
+    pieces.push("이미 " + rival.player.score + "점이라 스톱 가능");
+    pieces.push(status.actionLabel);
+  }
+  return pieces.filter(Boolean).join(" · ") + ".";
+}
+
+function buildOpponentPressureLine(state, rivals) {
+  const stoppable = rivals.find((item) => {
+    const status = getOpponentGoStopStatus(state, item.player);
+    return !!(status && status.canStopNow);
+  });
+  if (stoppable) {
+    const status = getOpponentGoStopStatus(state, stoppable.player);
+    return "<strong>흐름</strong> " + stoppable.player.name + "는 이미 "
+      + stoppable.player.score + "점이라 지금 스톱 가능한 상태입니다. "
+      + status.actionLabel + "으로 보이고, " + status.shortReason + ".";
+  }
+  return null;
 }
 
 function buildWinReason(winner, runnerUp) {
@@ -1218,11 +1291,12 @@ function assessTutor(state) {
       player,
       score: evaluateScore(player.captured).score,
       threat: evaluateThreatLevel(player),
-      trend: inferOpponentTrend(player)
+      trend: inferOpponentTrend(player),
+      goStopStatus: getOpponentGoStopStatus(state, player)
     }))
     .sort((a, b) => b.threat - a.threat);
-  const mostDangerous = rivals[0];
   const allMiss = recommendations.length > 0 && recommendations.every((move) => move.matches.length === 0);
+  const pressureLine = buildOpponentPressureLine(state, rivals);
 
   state.tutor = {
     summary: best
@@ -1231,16 +1305,27 @@ function assessTutor(state) {
         : "<strong>지금 추천</strong> " + best.card.label)
       : "<strong>지금 추천</strong> 손패 분석 중",
     flow: best
-      ? (allMiss
-        ? "<strong>흐름</strong> 버리는 턴. " + (safestDiscard ? safestDiscard.card.label + "부터 보면 됩니다." : "상대가 좋아할 월만 덜 열어주세요.")
-        : "<strong>흐름</strong> " + formatTutorOverview(best))
+      ? (pressureLine
+        ? pressureLine
+        : allMiss
+          ? "<strong>흐름</strong> 버리는 턴. " + (safestDiscard ? safestDiscard.card.label + "부터 보면 됩니다." : "상대가 좋아할 월만 덜 열어주세요.")
+          : "<strong>흐름</strong> " + formatTutorOverview(best))
       : "<strong>흐름</strong> 겹치는 월부터 보세요.",
     risk: rivals.length
-      ? "<strong>위험</strong> " + rivals.slice(0, 2).map((item, index) => (index + 1) + "순위 " + item.player.name + " · " + item.trend + (item.player.captured.some((card) => card.type === "bright") ? " 광 " + evaluateScoreBreakdown(item.player.captured).totals.bright + "장" : "")).join("<br>")
+      ? "<strong>위험</strong> " + rivals.slice(0, 2).map((item, index) => formatOpponentRiskLine(state, item, index)).join("<br>")
       : "<strong>위험</strong> 아직 큰 위협은 없습니다.",
-    skill: allMiss
-      ? "<strong>기술 포인트</strong> 비풍초보다 광, 열끗, 단 줄 재료를 먼저 아끼세요."
-      : "<strong>기술 포인트</strong> " + inferSkillLine(state, user, recommendations),
+    skill: (() => {
+      const stoppableRival = rivals.find((item) => item.goStopStatus && item.goStopStatus.canStopNow);
+      if (stoppableRival) {
+        return "<strong>기술 포인트</strong> "
+          + stoppableRival.player.name + "는 이미 " + stoppableRival.player.score + "점이라 다음 한 턴은 고/스톱 판단까지 같이 봐야 합니다. "
+          + stoppableRival.goStopStatus.reason;
+      }
+      if (allMiss) {
+        return "<strong>기술 포인트</strong> 비풍초보다 광, 열끗, 단 줄 재료를 먼저 아끼세요.";
+      }
+      return "<strong>기술 포인트</strong> " + inferSkillLine(state, user, recommendations);
+    })(),
     recommendations
   };
 }
@@ -1319,7 +1404,8 @@ function maybeHandleGoStop(state, playerIndex) {
   const player = state.players[playerIndex];
   if (player.score < RULE_CONFIG.stopThreshold) return false;
   if (playerIndex !== USER_INDEX) {
-    if (player.score >= 4 || state.deck.length <= 3) {
+    const suggestion = recommendGoStop(state, playerIndex, { useLookahead: false });
+    if (suggestion.action === "stop") {
       logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 스톱을 선택했습니다.`);
       endGame(state, playerIndex, "stop");
       return true;
@@ -1549,6 +1635,19 @@ function ensureAiTurnProgress() {
   if (app.pendingAiTimeout != null) return;
   if (app.pace === "step") return;
   scheduleAiTurn();
+}
+
+function startAiWatchdog() {
+  if (app.aiWatchdog != null) return;
+  app.aiWatchdog = window.setInterval(() => {
+    const state = app.state;
+    if (!state || state.winner != null) return;
+    if (state.currentPlayer === USER_INDEX) return;
+    if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
+    if (app.pendingAiTimeout != null) return;
+    if (app.pace === "step") return;
+    scheduleAiTurn();
+  }, 1200);
 }
 
 function setPace(nextPace) {
@@ -2136,6 +2235,7 @@ function renderShakeChoice(state) {
   modal.className = "match-modal";
   modal.innerHTML = `
     <div class="match-dialog">
+      <button class="match-close-btn" type="button" aria-label="흔들기 선택 닫기" data-close-shake="true">x</button>
       <h2>흔들기 선언</h2>
       <p>${pending.month}월이 손에 세 장 이상 있습니다. 한 장씩 운영할지, 세 장을 한꺼번에 폭탄처럼 처리할지 고를 수 있습니다.</p>
       <p class="choice-helper">${suggestion.reason}</p>
@@ -2146,31 +2246,37 @@ function renderShakeChoice(state) {
       </div>
     </div>
   `;
-  document.body.appendChild(modal);
-  [...modal.querySelectorAll("[data-shake-action]")].forEach((button) => {
-    button.addEventListener("click", () => {
-      const action = button.dataset.shakeAction;
-      const cardId = pending.cardId;
-      const month = pending.month;
+  modal.addEventListener("click", (event) => {
+    const closeButton = event.target.closest("[data-close-shake]");
+    if (closeButton) {
       state.pendingShakeChoice = null;
-      if (action === "shake") {
-        player.shakeCount += 1;
-        player.shakenMonths.push(month);
-        logEvent(state, "흔들기", `${player.name}가 ${month}월 흔들기를 선언했습니다.`);
-        resolveCardPlay(state, pending.playerIndex, cardId);
-        return;
-      }
-      if (action === "bomb") {
-        player.shakeCount += 1;
-        player.shakenMonths.push(month);
-        logEvent(state, "흔들기", `${player.name}가 ${month}월을 폭탄처럼 한꺼번에 처리했습니다.`);
-        resolveBombPlay(state, pending.playerIndex, cardId, month);
-        return;
-      }
-      logEvent(state, "흔들기 보류", `${player.name}가 ${month}월 흔들기를 보류하고 일반 진행을 선택했습니다.`);
+      render();
+      return;
+    }
+    const button = event.target.closest("[data-shake-action]");
+    if (!button) return;
+    const action = button.dataset.shakeAction;
+    const cardId = pending.cardId;
+    const month = pending.month;
+    state.pendingShakeChoice = null;
+    if (action === "shake") {
+      player.shakeCount += 1;
+      player.shakenMonths.push(month);
+      logEvent(state, "흔들기", `${player.name}가 ${month}월 흔들기를 선언했습니다.`);
       resolveCardPlay(state, pending.playerIndex, cardId);
-    });
+      return;
+    }
+    if (action === "bomb") {
+      player.shakeCount += 1;
+      player.shakenMonths.push(month);
+      logEvent(state, "흔들기", `${player.name}가 ${month}월을 폭탄처럼 한꺼번에 처리했습니다.`);
+      resolveBombPlay(state, pending.playerIndex, cardId, month);
+      return;
+    }
+    logEvent(state, "흔들기 보류", `${player.name}가 ${month}월 흔들기를 보류하고 일반 진행을 선택했습니다.`);
+    resolveCardPlay(state, pending.playerIndex, cardId);
   });
+  document.body.appendChild(modal);
 }
 
 function renderFlexibleChoice() {}
@@ -2214,6 +2320,7 @@ if (els.jokerToggleBtn) {
   els.jokerToggleBtn.addEventListener("click", () => {
     RULE_CONFIG.enableJokers = !RULE_CONFIG.enableJokers;
     syncOptionButtons();
+startAiWatchdog();
 startNewGame();
   });
 }
@@ -2232,4 +2339,5 @@ if (els.chatForm) {
   });
 }
 
+startAiWatchdog();
 startNewGame();
