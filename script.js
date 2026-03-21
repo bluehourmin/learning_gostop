@@ -114,8 +114,11 @@ const els = {
   userSeat: document.getElementById("user-seat"),
   tutorSummary: document.getElementById("tutor-summary"),
   recommendationList: document.getElementById("recommendation-list"),
+  warningStrip: document.getElementById("warning-strip"),
+  strategyInsight: document.getElementById("strategy-insight"),
   flowInsight: document.getElementById("flow-insight"),
   riskInsight: document.getElementById("risk-insight"),
+  riskCard: document.getElementById("risk-card"),
   skillInsight: document.getElementById("skill-insight"),
   eventLog: document.getElementById("event-log"),
   rulesSummary: document.getElementById("rules-summary"),
@@ -126,8 +129,8 @@ const els = {
 };
 
 const PACE_DELAY = {
-  slow: 1800,
-  normal: 800
+  slow: 2800,
+  normal: 1800
 };
 
 const RULE_CONFIG = {
@@ -796,7 +799,7 @@ function renderCapturedLayout(cards) {
   const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
   const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
   const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
-  const junkHtml = groups.junkRows.map((row) => `
+  const junkHtml = [...groups.junkRows].reverse().map((row) => `
     <div class="captured-junk-row">
       ${row.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("")}
     </div>
@@ -956,6 +959,42 @@ function scoreMove(state, player, card) {
     shortReason: reasons[0],
     reasons
   };
+}
+
+function inferStrategyLine(state, user, recommendations) {
+  const score = evaluateScoreBreakdown(user.captured);
+  const comboProgress = analyzeComboProgress(state, user)
+    .filter((item) => !item.brokenBy)
+    .sort((left, right) => right.count - left.count);
+  const bestCombo = comboProgress[0] || null;
+  const bestMove = recommendations[0] || null;
+  const bestMoveGain = bestMove ? buildSingleMovePlanLabel(bestMove) : "";
+
+  if (score.totals.bright >= 2 || (bestMove && bestMove.matches.some((card) => getEffectiveType(card) === 'bright'))) {
+    return `<strong>광 중심</strong>으로 보세요. 이미 광 줄이 살아 있고, ${bestMoveGain || '광이 붙는 수를 우선 보면 좋습니다.'}`;
+  }
+  if (bestCombo && bestCombo.name === '고도리' && bestCombo.count >= 2) {
+    return `<strong>고도리 중심</strong>으로 보세요. ${bestCombo.name} ${bestCombo.count}장이라 ${bestCombo.missing[0]}월 새만 더 보면 됩니다.`;
+  }
+  if (bestCombo && ['홍단', '청단', '초단'].includes(bestCombo.name) && bestCombo.count >= 2) {
+    return `<strong>${bestCombo.name}</strong> 줄을 우선 보세요. ${bestCombo.count}장이라 ${bestCombo.missing[0]}월 띠가 핵심입니다.`;
+  }
+  if (score.totals.junk >= 6 || (bestMove && bestMove.matches.some((card) => getJunkValue(card) >= 2))) {
+    return `<strong>피 중심</strong>으로 끌고 가세요. 지금은 쌍피와 피를 모아 막판 점수까지 연결하는 편이 좋습니다.`;
+  }
+  if (score.totals.animal >= 3 || (bestMove && bestMove.matches.some((card) => getEffectiveType(card) === 'animal'))) {
+    return `<strong>열끗 중심</strong>으로 보세요. 열끗 줄이 붙으면 고도리와 함께 점수 폭이 커집니다.`;
+  }
+  return `<strong>안전 운영</strong>이 더 좋습니다. 지금은 한 줄을 무리하게 밀기보다 상대가 좋아할 월을 덜 열고, 점수 나는 카드부터 챙기세요.`;
+}
+
+function buildSingleMovePlanLabel(move) {
+  if (!move) return '';
+  if (move.matches.some((card) => getEffectiveType(card) === 'bright')) return '광이 붙는 수부터 챙기세요.';
+  if (move.matches.some((card) => getEffectiveType(card) === 'animal')) return '열끗이 붙는 수부터 챙기세요.';
+  if (move.matches.some((card) => getEffectiveType(card) === 'ribbon')) return '띠 줄이 이어지는 수부터 챙기세요.';
+  if (move.matches.some((card) => getJunkValue(card) >= 2)) return '쌍피부터 챙겨 피 점수를 키우세요.';
+  return '';
 }
 
 function inferSkillLine(state, user, recommendations) {
@@ -1221,6 +1260,45 @@ function formatOpponentRiskLine(state, rival, index) {
   return pieces.filter(Boolean).join(" · ") + ".";
 }
 
+function buildThreatWarnings(state, rivals) {
+  const warnings = [];
+  rivals.forEach((item) => {
+    const player = item.player;
+    const evald = evaluateScoreBreakdown(player.captured);
+    const goStop = item.goStopStatus || getOpponentGoStopStatus(state, player);
+    if (goStop && goStop.canStopNow) {
+      warnings.push({ severity: 3, text: `<strong>${player.name}</strong> 이미 ${player.score}점 · 지금 스톱 가능` });
+    }
+    if (evald.totals.bright >= 2) {
+      warnings.push({ severity: evald.totals.bright >= 3 ? 3 : 2, text: `<strong>${player.name}</strong> 광 ${evald.totals.bright}장` });
+    }
+    if (evald.totals.junk >= 8) {
+      warnings.push({ severity: evald.totals.junk >= 9 ? 2 : 1, text: `<strong>${player.name}</strong> 피 ${evald.totals.junk}장` });
+    }
+    const progress = analyzeComboProgress(state, player)
+      .filter((combo) => combo.count >= 2 && !combo.brokenBy)
+      .sort((left, right) => right.count - left.count);
+    progress.slice(0, 2).forEach((combo) => {
+      const missing = combo.missing[0];
+      warnings.push({
+        severity: combo.count >= 2 ? 2 : 1,
+        text: `<strong>${player.name}</strong> ${combo.name} ${combo.count}장 · ${missing}월만 더 보면 됩니다`
+      });
+    });
+  });
+  const unique = [];
+  warnings
+    .sort((a, b) => b.severity - a.severity)
+    .forEach((item) => {
+      if (unique.some((candidate) => candidate.text === item.text)) return;
+      unique.push(item);
+    });
+  return {
+    critical: unique.some((item) => item.severity >= 2),
+    items: unique.slice(0, 4)
+  };
+}
+
 function buildOpponentPressureLine(state, rivals) {
   const stoppable = rivals.find((item) => {
     const status = getOpponentGoStopStatus(state, item.player);
@@ -1252,18 +1330,22 @@ function buildWinReason(winner, runnerUp) {
 
 function buildEndGameTutor(state) {
   const ordered = [...state.players].sort((a, b) => b.score - a.score);
-  const winner = ordered[0];
-  const runnerUp = ordered[1] || ordered[0];
+  const winner = state.winner != null ? state.players[state.winner] : ordered[0];
+  const runnerUp = ordered.find((player) => player.seat !== winner.seat) || winner;
   const scoreboard = buildScoreboardHtml(state);
-  const reason = buildWinReason(winner, runnerUp);
   const payout = buildPayoutSummary(state, winner);
   const endingLabel = state.endReason === "stop" ? "스톱 종료" : state.endReason === "deck" ? "패 소진 종료" : "판 종료";
+  const tiedTop = runnerUp && runnerUp !== winner && runnerUp.score === winner.score;
+  const reason = state.endReason === "stop" && tiedTop
+    ? "동점이었지만 스톱을 선언한 " + winner.name + "가 승리를 확정했습니다."
+    : buildWinReason(winner, runnerUp);
   return {
     summary: "<strong>" + endingLabel + "</strong> " + winner.name + " 승리",
     flow: '<strong>수령액</strong> ' + winner.name + '가 총 ' + payout.total.toLocaleString("ko-KR") + '원을 받습니다.'
       + '<br><span>승리 점수 ' + winner.score + '점, 정산 기준 ' + payout.settlementScore + '점</span>'
       + '<br><span>' + payout.detail + '</span>'
       + (payout.reasons ? '<br><span>' + payout.reasons + '</span>' : '')
+      + (state.endReason === "stop" && tiedTop ? '<br><span>동점 ' + winner.score + '점이었지만 스톱 선언자는 ' + winner.name + '입니다.</span>' : '')
       + '<div class="scoreboard-lines">' + scoreboard + '</div>',
     risk: "<strong>승부 포인트</strong> " + reason,
     skill: runnerUp && runnerUp !== winner
@@ -1297,6 +1379,7 @@ function assessTutor(state) {
     .sort((a, b) => b.threat - a.threat);
   const allMiss = recommendations.length > 0 && recommendations.every((move) => move.matches.length === 0);
   const pressureLine = buildOpponentPressureLine(state, rivals);
+  const threatWarnings = buildThreatWarnings(state, rivals);
 
   state.tutor = {
     summary: best
@@ -1304,6 +1387,7 @@ function assessTutor(state) {
         ? "<strong>지금 추천</strong> " + best.card.label + "부터 정리"
         : "<strong>지금 추천</strong> " + best.card.label)
       : "<strong>지금 추천</strong> 손패 분석 중",
+    strategy: inferStrategyLine(state, user, recommendations),
     flow: best
       ? (pressureLine
         ? pressureLine
@@ -1326,6 +1410,8 @@ function assessTutor(state) {
       }
       return "<strong>기술 포인트</strong> " + inferSkillLine(state, user, recommendations);
     })(),
+    warnings: threatWarnings.items,
+    criticalWarning: threatWarnings.critical,
     recommendations
   };
 }
@@ -1353,10 +1439,13 @@ function applyJunkSteal(state, winnerIndex, title) {
   const taken = [];
   state.players.forEach((player) => {
     if (player.seat === winnerIndex) return;
+    const beforeScore = evaluateScore(player.captured).score;
     const junk = takePreferredJunkCard(player);
     if (junk) {
       winner.captured.push(junk);
-      taken.push(player.name + "의 " + junk.label);
+      const afterScore = evaluateScore(player.captured).score;
+      const drop = beforeScore - afterScore;
+      taken.push(player.name + "의 " + junk.label + (drop > 0 ? "(" + beforeScore + "점→" + afterScore + "점)" : ""));
     }
   });
   if (taken.length) {
@@ -1403,18 +1492,19 @@ function maybeHandleGoStop(state, playerIndex) {
   if (!RULE_CONFIG.enableGoStop) return false;
   const player = state.players[playerIndex];
   if (player.score < RULE_CONFIG.stopThreshold) return false;
+  const scoreBreakdown = formatScoreBreakdown(player.captured);
   if (playerIndex !== USER_INDEX) {
     const suggestion = recommendGoStop(state, playerIndex, { useLookahead: false });
     if (suggestion.action === "stop") {
-      logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 스톱을 선택했습니다.`);
+      logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 스톱을 선택했습니다. 근거는 ${scoreBreakdown}입니다.`);
       endGame(state, playerIndex, "stop");
       return true;
     }
     player.goCount += 1;
-    logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 고를 선택했습니다.`);
+    logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 고를 선택했습니다. 당시 점수 근거는 ${scoreBreakdown}입니다.`);
     return false;
   }
-  state.pendingGoStopChoice = { playerIndex, score: player.score };
+  state.pendingGoStopChoice = { playerIndex, score: player.score, scoreBreakdown };
   render();
   return true;
 }
@@ -1966,8 +2056,19 @@ function renderField(state) {
 function renderTutor(state) {
   const tutor = state.tutor;
   els.tutorSummary.innerHTML = tutor.summary;
+  if (els.warningStrip) {
+    const warnings = tutor.warnings || [];
+    els.warningStrip.innerHTML = warnings.map((item) => `<div class="warning-chip">${item.text}</div>`).join("");
+    els.warningStrip.classList.toggle('has-items', warnings.length > 0);
+  }
+  if (els.riskCard) {
+    els.riskCard.classList.toggle('warning-pulse', !!tutor.criticalWarning);
+  }
   els.recommendationList.innerHTML = "";
   els.recommendationList.style.display = "none";
+  if (els.strategyInsight) {
+    els.strategyInsight.innerHTML = tutor.strategy || "<strong>전략</strong> 지금은 점수 나는 줄을 먼저 보세요.";
+  }
   els.flowInsight.innerHTML = tutor.flow;
   els.riskInsight.innerHTML = tutor.risk;
   els.skillInsight.innerHTML = tutor.skill;
@@ -2179,6 +2280,106 @@ function renderPendingChoice(state) {
   });
   document.body.appendChild(modal);
 }
+const GO_STOP_MODAL_PREFS_KEY = "gostop-go-stop-dialog";
+const DEFAULT_GO_STOP_OPACITY = 0.92;
+
+function loadGoStopDialogPrefs() {
+  try {
+    const raw = window.localStorage.getItem(GO_STOP_MODAL_PREFS_KEY);
+    if (!raw) return { left: null, top: null, opacity: DEFAULT_GO_STOP_OPACITY };
+    const parsed = JSON.parse(raw);
+    return {
+      left: Number.isFinite(parsed.left) ? parsed.left : null,
+      top: Number.isFinite(parsed.top) ? parsed.top : null,
+      opacity: Number.isFinite(parsed.opacity) ? parsed.opacity : DEFAULT_GO_STOP_OPACITY
+    };
+  } catch (error) {
+    return { left: null, top: null, opacity: DEFAULT_GO_STOP_OPACITY };
+  }
+}
+
+function saveGoStopDialogPrefs(prefs) {
+  try {
+    window.localStorage.setItem(GO_STOP_MODAL_PREFS_KEY, JSON.stringify(prefs));
+  } catch (error) {
+    // ignore localStorage failures
+  }
+}
+
+function applyGoStopDialogPrefs(dialog, prefs) {
+  const margin = 12;
+  const width = dialog.offsetWidth || 760;
+  const height = dialog.offsetHeight || 420;
+  const maxLeft = Math.max(margin, window.innerWidth - width - margin);
+  const maxTop = Math.max(margin, window.innerHeight - height - margin);
+  const left = prefs.left == null
+    ? Math.max(margin, Math.round((window.innerWidth - width) / 2))
+    : Math.min(maxLeft, Math.max(margin, Math.round(prefs.left)));
+  const top = prefs.top == null
+    ? Math.max(margin, Math.round((window.innerHeight - height) / 2))
+    : Math.min(maxTop, Math.max(margin, Math.round(prefs.top)));
+  const opacity = Math.min(1, Math.max(0.4, Number.isFinite(prefs.opacity) ? prefs.opacity : DEFAULT_GO_STOP_OPACITY));
+  dialog.style.left = left + 'px';
+  dialog.style.top = top + 'px';
+  dialog.style.opacity = opacity.toFixed(2);
+  prefs.left = left;
+  prefs.top = top;
+  prefs.opacity = opacity;
+}
+
+function enhanceGoStopDialog(modal, dialog) {
+  modal.classList.add('go-stop-overlay');
+  const toolbar = dialog.querySelector('[data-drag-handle]');
+  const opacityInput = dialog.querySelector('[data-go-stop-opacity]');
+  const opacityValue = dialog.querySelector('[data-go-stop-opacity-value]');
+  const prefs = loadGoStopDialogPrefs();
+  const syncOpacityUi = () => {
+    const percent = Math.round((prefs.opacity || DEFAULT_GO_STOP_OPACITY) * 100);
+    if (opacityInput) opacityInput.value = String(percent);
+    if (opacityValue) opacityValue.textContent = percent + '%';
+  };
+  requestAnimationFrame(() => {
+    applyGoStopDialogPrefs(dialog, prefs);
+    syncOpacityUi();
+  });
+  if (opacityInput) {
+    opacityInput.addEventListener('input', () => {
+      prefs.opacity = Number(opacityInput.value) / 100;
+      applyGoStopDialogPrefs(dialog, prefs);
+      syncOpacityUi();
+      saveGoStopDialogPrefs(prefs);
+    });
+  }
+  if (!toolbar) return;
+  toolbar.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('button, input, label')) return;
+    event.preventDefault();
+    const startLeft = prefs.left == null ? dialog.getBoundingClientRect().left : prefs.left;
+    const startTop = prefs.top == null ? dialog.getBoundingClientRect().top : prefs.top;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    dialog.classList.add('is-dragging');
+    const onMove = (moveEvent) => {
+      prefs.left = startLeft + (moveEvent.clientX - startX);
+      prefs.top = startTop + (moveEvent.clientY - startY);
+      applyGoStopDialogPrefs(dialog, prefs);
+    };
+    const onUp = () => {
+      dialog.classList.remove('is-dragging');
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      saveGoStopDialogPrefs(prefs);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  });
+  window.addEventListener('resize', () => {
+    applyGoStopDialogPrefs(dialog, prefs);
+    syncOpacityUi();
+    saveGoStopDialogPrefs(prefs);
+  }, { once: true });
+}
+
 function renderGoStopChoice(state) {
   const choice = state.pendingGoStopChoice;
   if (!choice) return;
@@ -2187,9 +2388,20 @@ function renderGoStopChoice(state) {
   const stopBadge = suggestion.action === "stop" ? `<span class="choice-badge">추천</span>` : "";
   const goBadge = suggestion.action === "go" ? `<span class="choice-badge">추천</span>` : "";
   const modal = document.createElement("div");
-  modal.className = "match-modal";
+  modal.className = "match-modal go-stop-overlay";
   modal.innerHTML = `
     <div class="match-dialog go-stop-dialog">
+      <div class="go-stop-toolbar" data-drag-handle="true">
+        <div class="go-stop-drag-copy">
+          <strong>판 보면서 움직이기</strong>
+          <span>이 막대를 잡고 옮기세요.</span>
+        </div>
+        <label class="go-stop-opacity-control">
+          <span>투명도</span>
+          <input type="range" min="40" max="100" step="5" value="92" data-go-stop-opacity="true" />
+          <strong data-go-stop-opacity-value>92%</strong>
+        </label>
+      </div>
       <h2>고 또는 스톱</h2>
       <p>현재 ${player.score}점입니다. 선택은 직접 하되, 지금 판에서는 <strong>${suggestion.action === "go" ? "고" : "스톱"}</strong> 쪽을 더 추천합니다.</p>
       <div class="go-stop-grid">
@@ -2209,17 +2421,18 @@ function renderGoStopChoice(state) {
     </div>
   `;
   document.body.appendChild(modal);
+  enhanceGoStopDialog(modal, modal.querySelector('.go-stop-dialog'));
   [...modal.querySelectorAll("[data-gostop]")].forEach((button) => {
     button.addEventListener("click", () => {
       const action = button.dataset.gostop;
       if (action === "stop") {
         state.pendingGoStopChoice = null;
-        logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 스톱을 선택했습니다.`);
+        logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 스톱을 선택했습니다. 근거는 ${choice.scoreBreakdown || formatScoreBreakdown(player.captured)}입니다.`);
         endGame(state, choice.playerIndex);
         return;
       }
       player.goCount += 1;
-      logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 고를 선택했습니다.`);
+      logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 고를 선택했습니다. 당시 점수 근거는 ${choice.scoreBreakdown || formatScoreBreakdown(player.captured)}입니다.`);
       continueAfterGo(state, choice.playerIndex);
     });
   });

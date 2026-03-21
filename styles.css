@@ -472,9 +472,9 @@ button {
 
 .captured-junk {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: 8px;
-  justify-content: flex-start;
+  justify-content: flex-end;
   min-height: 168px;
 }
 
@@ -761,6 +761,37 @@ button {
   line-height: 1.65;
 }
 
+.warning-strip {
+  display: none;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.warning-strip.has-items {
+  display: grid;
+}
+
+.warning-chip {
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(176, 63, 45, 0.18);
+  background: linear-gradient(180deg, rgba(255, 236, 231, 0.96), rgba(255, 246, 238, 0.96));
+  color: #7d2f1f;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.warning-chip strong {
+  color: #a23322;
+}
+
+.insight-grid article.warning-pulse {
+  border-color: rgba(176, 63, 45, 0.28);
+  box-shadow: 0 0 0 0 rgba(196, 83, 64, 0.28);
+  animation: riskPulse 1.35s ease-in-out infinite;
+}
+
 .recommendation-list,
 .insight-grid,
 .event-log {
@@ -818,6 +849,12 @@ button {
   isolation: isolate;
 }
 
+.match-modal.go-stop-overlay {
+  background: rgba(24, 13, 8, 0.18);
+  padding: 0;
+  pointer-events: none;
+}
+
 .match-dialog {
   width: min(760px, 100%);
   max-height: min(88vh, 760px);
@@ -828,6 +865,61 @@ button {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
   position: relative;
   z-index: 1;
+}
+
+.go-stop-dialog {
+  position: fixed;
+  width: min(760px, calc(100vw - 28px));
+  max-width: 760px;
+  max-height: min(86vh, 760px);
+  pointer-events: auto;
+  transition: opacity 140ms ease, box-shadow 140ms ease;
+}
+
+.go-stop-dialog.is-dragging {
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.3);
+}
+
+.go-stop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -2px 0 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(244, 223, 183, 0.6);
+  border: 1px solid rgba(131, 88, 36, 0.16);
+  cursor: grab;
+  user-select: none;
+}
+
+.go-stop-toolbar:active {
+  cursor: grabbing;
+}
+
+.go-stop-drag-copy {
+  display: grid;
+  gap: 2px;
+  color: #6d3c19;
+  font-size: 12px;
+}
+
+.go-stop-drag-copy strong {
+  font-size: 13px;
+}
+
+.go-stop-opacity-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6d3c19;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.go-stop-opacity-control input {
+  width: 110px;
 }
 
 .match-dialog h2 {
@@ -1553,4 +1645,10 @@ button {
 
 .compact-rules[open] .compact-rules-summary::after {
   content: "접기 ▴";
+}
+
+@keyframes riskPulse {
+  0% { box-shadow: 0 0 0 0 rgba(196, 83, 64, 0.28); }
+  70% { box-shadow: 0 0 0 12px rgba(196, 83, 64, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(196, 83, 64, 0); }
 }
