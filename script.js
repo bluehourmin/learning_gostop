@@ -243,7 +243,7 @@ function createGame() {
   logEvent(state, "시작", `${PLAYER_NAMES[dealerIndex]}가 선입니다. 진행 방향은 시계 방향입니다.`);
   if (openingJokers.length) {
     logEvent(state, "시작 조커", PLAYER_NAMES[dealerIndex] + "가 바닥 조커 " + openingJokers.map((card) => card.label).join(", ") + "를 먼저 가져가고 시작합니다.");
-    players[dealerIndex].score = evaluateScore(players[dealerIndex].captured).score;
+    players[dealerIndex].score = evaluatePlayerScore(players[dealerIndex]).score;
   }
   const totalTongWinner = players.find((player) => findFourOfKindMonth(player.hand));
   if (totalTongWinner) {
@@ -280,7 +280,7 @@ function recommendShake(state, player, month) {
   const monthCards = player.hand.filter((card) => card.month === month);
   const monthMoves = monthCards.map((card) => scoreMove(state, player, card)).sort((a, b) => b.score - a.score);
   const bestMove = monthMoves[0];
-  const rivalBest = Math.max(...state.players.filter((candidate) => candidate.seat !== player.seat).map((candidate) => evaluateScore(candidate.captured).score), 0);
+  const rivalBest = Math.max(...state.players.filter((candidate) => candidate.seat !== player.seat).map((candidate) => evaluatePlayerScore(candidate).score), 0);
   if (bestMove && bestMove.matches.length > 0 && player.score <= rivalBest) {
     return { recommend: true, reason: month + "월은 지금 바로 먹는 줄이 있어 흔들면서 압박을 걸기 좋습니다." };
   }
@@ -463,9 +463,24 @@ function evaluateScoreBreakdown(cards) {
   return { score, totals, parts };
 }
 
-function evaluateScore(cards) {
+function evaluateScore(cards, goCount = 0) {
   const evaluated = evaluateScoreBreakdown(cards);
-  return { score: evaluated.score, totals: evaluated.totals };
+  return { score: evaluated.score + (goCount || 0), totals: evaluated.totals, baseScore: evaluated.score, goScore: goCount || 0 };
+}
+
+function evaluatePlayerScoreBreakdown(player) {
+  const evaluated = evaluateScoreBreakdown(player.captured);
+  const goScore = player.goCount || 0;
+  const parts = [...evaluated.parts];
+  if (goScore > 0) {
+    parts.push({ label: '고 ' + goScore + '번', score: goScore });
+  }
+  return { score: evaluated.score + goScore, totals: evaluated.totals, parts, baseScore: evaluated.score, goScore };
+}
+
+function evaluatePlayerScore(player) {
+  const evaluated = evaluatePlayerScoreBreakdown(player);
+  return { score: evaluated.score, totals: evaluated.totals, baseScore: evaluated.baseScore, goScore: evaluated.goScore };
 }
 
 function comboDefinitions() {
@@ -492,7 +507,7 @@ function analyzeComboProgress(state, player) {
 }
 
 function evaluateThreatLevel(player) {
-  const evaluated = evaluateScore(player.captured);
+  const evaluated = evaluatePlayerScore(player);
   const comboProgress = analyzeComboProgress({ players: [player] }, player)
     .reduce((sum, item) => sum + (item.count === 2 ? 5 : item.count === 1 ? 1.5 : 0), 0);
   const brightPressure = evaluated.totals.bright >= 2 ? evaluated.totals.bright * 11 : evaluated.totals.bright * 3.5;
@@ -640,6 +655,28 @@ function explainExposureReason(state, player, card) {
   return card.month + "월은 아직 공개 정보상 특정 줄과 바로 이어진다고 보기 어렵습니다.";
 }
 
+function evaluateLiveComboHold(state, player, card) {
+  if (!card || card.type === "joker") return { penalty: 0, reason: "" };
+  const effectiveType = getEffectiveType(card);
+  let best = { penalty: 0, reason: "" };
+  comboDefinitions()
+    .filter((combo) => combo.type === effectiveType && combo.months.includes(card.month))
+    .forEach((combo) => {
+      const otherMonths = combo.months.filter((month) => month !== card.month);
+      const ownedCaptured = otherMonths.filter((month) => player.captured.some((owned) => getEffectiveType(owned) === combo.type && owned.month === month));
+      const ownedHand = otherMonths.filter((month) => player.hand.some((owned) => owned.id !== card.id && getEffectiveType(owned) === combo.type && owned.month === month));
+      const rivalTaken = otherMonths.filter((month) => state.players.some((opponent) => opponent.seat !== player.seat && opponent.captured.some((owned) => getEffectiveType(owned) === combo.type && owned.month === month)));
+      if (rivalTaken.length) return;
+      const ownedTotal = ownedCaptured.length + ownedHand.length;
+      if (!ownedTotal) return;
+      const penalty = ownedTotal >= 2 ? 30 : 20;
+      const heldMonths = [...new Set([...ownedCaptured, ...ownedHand, card.month])].sort((a, b) => a - b);
+      const reason = combo.name + " 줄이 아직 살아 있고 내 쪽 " + heldMonths.join(", ") + "월이 잡혀 있어 " + card.label + "은 먼저 풀면 안 됩니다.";
+      if (penalty > best.penalty) best = { penalty, reason };
+    });
+  return best;
+}
+
 function evaluateFieldExposure(state, player, card) {
   if (!card || card.type === "joker") return 0;
   const safeDiscardReason = getSafeDiscardReason(state, player, card);
@@ -678,7 +715,7 @@ function evaluateCaptureDenial(state, player, cards) {
 
 function chooseBestCaptureTarget(state, player, playedCard, matches) {
   if (!matches.length) return null;
-  const currentScore = evaluateScore(player.captured).score;
+  const currentScore = evaluatePlayerScore(player).score;
   return [...matches].sort((left, right) => {
     const leftSimulated = [...player.captured, playedCard, left];
     const rightSimulated = [...player.captured, playedCard, right];
@@ -867,6 +904,11 @@ function scoreMove(state, player, card) {
     score -= 10 + exposurePenalty + discardValuePenalty - (noCapturePriority * 1.6);
     reasons.push("지금 내면 바닥에 패를 남겨 상대에게 연결 자리를 줍니다.");
     const safeDiscardReason = getSafeDiscardReason(state, player, card);
+    const liveComboHold = evaluateLiveComboHold(state, player, card);
+    if (liveComboHold.penalty > 0) {
+      score -= liveComboHold.penalty;
+      reasons.push(liveComboHold.reason);
+    }
     if (safeDiscardReason) {
       score += 16;
       reasons.push(safeDiscardReason);
@@ -888,6 +930,8 @@ function scoreMove(state, player, card) {
         } else {
           reasons.push(card.label + "은 비풍초 쪽 우선순위에 가까워, 먹을 게 없는 턴엔 먼저 정리하는 편입니다.");
         }
+      } else if (liveComboHold.penalty > 0) {
+        reasons.push(card.month + "월 띠는 내 단 줄 핵심 재료라 지금은 보류 쪽이 맞습니다.");
       } else if (card.type === "ribbon") {
         reasons.push(card.month + "월 띠는 단 줄 재료가 될 수 있어 보류 가치가 있습니다.");
       } else if (card.type === "animal" || card.type === "bright") {
@@ -1080,10 +1124,11 @@ function resolveSimulationGoStop(state) {
     const suggestion = recommendGoStop(state, choice.playerIndex, { useLookahead: false });
     if (suggestion.action === "stop") {
       state.pendingGoStopChoice = null;
-      endGame(state, choice.playerIndex);
+      endGame(state, choice.playerIndex, "stop");
       return;
     }
     state.players[choice.playerIndex].goCount += 1;
+    state.players[choice.playerIndex].score = evaluatePlayerScore(state.players[choice.playerIndex]).score;
     continueAfterGo(state, choice.playerIndex);
   }
 }
@@ -1107,11 +1152,11 @@ function runSimulationAiTurn(state) {
 
 function evaluateSimulationBalance(state) {
   const me = state.players[USER_INDEX];
-  const myScore = evaluateScore(me.captured).score;
+  const myScore = evaluatePlayerScore(me).score;
   const myThreat = evaluateThreatLevel(me);
   const rivalScores = state.players
     .filter((player) => player.seat !== USER_INDEX)
-    .map((player) => ({ score: evaluateScore(player.captured).score, threat: evaluateThreatLevel(player) }));
+    .map((player) => ({ score: evaluatePlayerScore(player).score, threat: evaluateThreatLevel(player) }));
   const bestRivalScore = Math.max(...rivalScores.map((item) => item.score), 0);
   const bestRivalThreat = Math.max(...rivalScores.map((item) => item.threat), 0);
   if (state.winner != null) {
@@ -1147,13 +1192,19 @@ function formatScoreBreakdown(cards) {
   return breakdown.parts.map((part) => part.label + " " + part.score + "점").join(" + ");
 }
 
+function formatPlayerScoreBreakdown(player) {
+  const breakdown = evaluatePlayerScoreBreakdown(player);
+  if (!breakdown.parts.length) return "점수 없음";
+  return breakdown.parts.map((part) => part.label + " " + part.score + "점").join(" + ");
+}
+
 function summarizePlayerResult(player) {
-  const evaluated = evaluateScoreBreakdown(player.captured);
-  return player.name + " " + evaluated.score + "점(" + formatScoreBreakdown(player.captured) + ")";
+  const evaluated = evaluatePlayerScoreBreakdown(player);
+  return player.name + " " + evaluated.score + "점(" + formatPlayerScoreBreakdown(player) + ")";
 }
 
 function buildPayoutSummary(state, winner) {
-  const winnerEval = evaluateScoreBreakdown(winner.captured);
+  const winnerEval = evaluatePlayerScoreBreakdown(winner);
   const settlementScore = Math.max(RULE_CONFIG.stopThreshold || 3, winner.score || 0);
   const base = settlementScore * MONEY_PER_POINT;
   const wonByJunk = winnerEval.parts.some((part) => part.label.startsWith("피 "));
@@ -1190,6 +1241,7 @@ function getOpponentGoStopStatus(state, player) {
   if (!canStopNow) return null;
   const suggestion = recommendGoStop(state, player.seat, { useLookahead: false });
   const actionLabel = suggestion.action === "go" ? "고 쪽" : "스톱 쪽";
+  const goNote = player.goCount > 0 ? "이미 고 " + player.goCount + "번 상태입니다. " : "";
   const shortReason = suggestion.action === "go"
     ? (suggestion.goBalance > suggestion.stopBalance
       ? "한 턴 더 벌 여지가 있습니다"
@@ -1201,7 +1253,7 @@ function getOpponentGoStopStatus(state, player) {
     canStopNow,
     action: suggestion.action,
     actionLabel,
-    shortReason,
+    shortReason: goNote + shortReason,
     forecast: suggestion.action === "go" ? suggestion.goForecast : suggestion.stopForecast,
     reason: suggestion.action === "go" ? suggestion.goReason : suggestion.stopReason
   };
@@ -1227,6 +1279,9 @@ function inferOpponentTrend(player) {
   }
   if (evaluated.totals.bright >= 2) {
     parts.push("광 " + evaluated.totals.bright + "장입니다");
+  }
+  if (player.goCount > 0) {
+    parts.push("이미 고 " + player.goCount + "번 했습니다");
   }
   if (evaluated.totals.junk >= 8) {
     parts.push("피를 모아 막판 점수를 보려는 흐름입니다");
@@ -1268,6 +1323,9 @@ function buildThreatWarnings(state, rivals) {
     const goStop = item.goStopStatus || getOpponentGoStopStatus(state, player);
     if (goStop && goStop.canStopNow) {
       warnings.push({ severity: 3, text: `<strong>${player.name}</strong> 이미 ${player.score}점 · 지금 스톱 가능` });
+    }
+    if (player.goCount > 0) {
+      warnings.push({ severity: 2, text: "<strong>" + player.name + "</strong> 고 " + player.goCount + "번 진행 중" });
     }
     if (evald.totals.bright >= 2) {
       warnings.push({ severity: evald.totals.bright >= 3 ? 3 : 2, text: `<strong>${player.name}</strong> 광 ${evald.totals.bright}장` });
@@ -1314,8 +1372,8 @@ function buildOpponentPressureLine(state, rivals) {
 }
 
 function buildWinReason(winner, runnerUp) {
-  const winnerEval = evaluateScore(winner.captured);
-  const runnerEval = evaluateScore(runnerUp.captured);
+  const winnerEval = evaluatePlayerScore(winner);
+  const runnerEval = evaluatePlayerScore(runnerUp);
   const winnerCombos = findCompletedNamedCombos(winner.captured);
   const reasons = [];
 
@@ -1349,8 +1407,8 @@ function buildEndGameTutor(state) {
       + '<div class="scoreboard-lines">' + scoreboard + '</div>',
     risk: "<strong>승부 포인트</strong> " + reason,
     skill: runnerUp && runnerUp !== winner
-      ? "<strong>점수 근거</strong> " + winner.name + "는 " + formatScoreBreakdown(winner.captured) + ". " + runnerUp.name + "는 " + formatScoreBreakdown(runnerUp.captured) + "."
-      : "<strong>점수 근거</strong> " + winner.name + "는 " + formatScoreBreakdown(winner.captured) + ".",
+      ? "<strong>점수 근거</strong> " + winner.name + "는 " + formatPlayerScoreBreakdown(winner) + ". " + runnerUp.name + "는 " + formatPlayerScoreBreakdown(runnerUp) + "."
+      : "<strong>점수 근거</strong> " + winner.name + "는 " + formatPlayerScoreBreakdown(winner) + ".",
     recommendations: []
   };
 }
@@ -1371,7 +1429,7 @@ function assessTutor(state) {
     .filter((player) => player.seat !== USER_INDEX)
     .map((player) => ({
       player,
-      score: evaluateScore(player.captured).score,
+      score: evaluatePlayerScore(player).score,
       threat: evaluateThreatLevel(player),
       trend: inferOpponentTrend(player),
       goStopStatus: getOpponentGoStopStatus(state, player)
@@ -1439,11 +1497,11 @@ function applyJunkSteal(state, winnerIndex, title) {
   const taken = [];
   state.players.forEach((player) => {
     if (player.seat === winnerIndex) return;
-    const beforeScore = evaluateScore(player.captured).score;
+    const beforeScore = evaluatePlayerScore(player).score;
     const junk = takePreferredJunkCard(player);
     if (junk) {
       winner.captured.push(junk);
-      const afterScore = evaluateScore(player.captured).score;
+      const afterScore = evaluatePlayerScore(player).score;
       const drop = beforeScore - afterScore;
       taken.push(player.name + "의 " + junk.label + (drop > 0 ? "(" + beforeScore + "점→" + afterScore + "점)" : ""));
     }
@@ -1465,7 +1523,7 @@ function chooseBestFlexibleMode(player, card) {
   let bestJunkTotal = -Infinity;
   card.flexibleScore.forEach((mode) => {
     card.scoreMode = mode;
-    const evaluated = evaluateScore(player.captured);
+    const evaluated = evaluatePlayerScore(player);
     if (
       evaluated.score > bestScore
       || (evaluated.score === bestScore && evaluated.totals.junk > bestJunkTotal)
@@ -1492,7 +1550,7 @@ function maybeHandleGoStop(state, playerIndex) {
   if (!RULE_CONFIG.enableGoStop) return false;
   const player = state.players[playerIndex];
   if (player.score < RULE_CONFIG.stopThreshold) return false;
-  const scoreBreakdown = formatScoreBreakdown(player.captured);
+  const scoreBreakdown = formatPlayerScoreBreakdown(player);
   if (playerIndex !== USER_INDEX) {
     const suggestion = recommendGoStop(state, playerIndex, { useLookahead: false });
     if (suggestion.action === "stop") {
@@ -1501,7 +1559,8 @@ function maybeHandleGoStop(state, playerIndex) {
       return true;
     }
     player.goCount += 1;
-    logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 고를 선택했습니다. 당시 점수 근거는 ${scoreBreakdown}입니다.`);
+    player.score = evaluatePlayerScore(player).score;
+    logEvent(state, "고/스톱", `${player.name}가 ${player.score - 1}점에서 고를 선택했습니다. 당시 점수 근거는 ${scoreBreakdown}입니다.`);
     return false;
   }
   state.pendingGoStopChoice = { playerIndex, score: player.score, scoreBreakdown };
@@ -1562,7 +1621,7 @@ function finishTurn(state, playerIndex) {
     render();
     return;
   }
-  state.players[playerIndex].score = evaluateScore(state.players[playerIndex].captured).score;
+  state.players[playerIndex].score = evaluatePlayerScore(state.players[playerIndex]).score;
   if (state.deck.length === 0 || state.players.every((player) => player.hand.length === 0)) {
     endGame(state, playerIndex, "deck");
     return;
@@ -1602,7 +1661,7 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
       finishTurn(state, playerIndex);
       return true;
     }
-    player.score = evaluateScore(player.captured).score;
+    player.score = evaluatePlayerScore(player).score;
     queueMotion(state, { capturedIds: [card.id], seat: playerIndex, stockPulse: true });
     assessTutor(state);
     render();
@@ -1658,7 +1717,7 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
 
 function endGame(state, winnerIndex = null, endReason = null) {
   state.players.forEach((player) => {
-    player.score = evaluateScore(player.captured).score;
+    player.score = evaluatePlayerScore(player).score;
   });
   const ordered = [...state.players].sort((a, b) => b.score - a.score);
   state.winner = winnerIndex == null ? ordered[0].seat : winnerIndex;
@@ -1910,7 +1969,7 @@ function renderHiddenHandSummary() {
   return "";
 }
 function renderSeat(player, options = {}) {
-  const evaluated = evaluateScore(player.captured);
+  const evaluated = evaluatePlayerScore(player);
   const isActive = app.state.currentPlayer === player.seat && app.state.winner == null;
   const seatClass = isActive ? "seat active" : "seat";
   const handClass = player.seat === USER_INDEX ? "user-hand" : "opponent-hand is-hidden";
@@ -1948,11 +2007,11 @@ function renderSeat(player, options = {}) {
     <div class="seat-header">
       <div>
         <div class="seat-name">${player.name}${player.seat === app.dealerIndex ? " · 선" : ""}</div>
-        <div class="seat-score" title="${formatScoreBreakdown(player.captured)}">${evaluated.score}점 · 광 ${evaluated.totals.bright} · 열 ${evaluated.totals.animal} · 띠 ${evaluated.totals.ribbon} · 피 ${evaluated.totals.junk}</div>
+        <div class="seat-score" title="${formatPlayerScoreBreakdown(player)}">${evaluated.score}점 · 광 ${evaluated.totals.bright} · 열 ${evaluated.totals.animal} · 띠 ${evaluated.totals.ribbon} · 피 ${evaluated.totals.junk}</div>
       </div>
       ${player.seat === USER_INDEX ? `<span class="badge subtle hand-count-badge">${player.hand.length}장</span>` : ""}
     </div>
-    <p class="seat-comment">${seatComment(player)}</p>
+    ${player.seat === USER_INDEX ? `<p class="seat-comment">${seatComment(player)}</p>` : ""}
     ${player.seat === USER_INDEX ? `<div class="${handClass}">${handHtml}</div>` : ""}
     <div class="seat-group-label">먹은 패 정리</div>
     <div class="captured-strip organized ${player.seat === USER_INDEX ? "" : "opponent-captured-strip"}"><div class="${publicZoneClass}">${capturedLayout}</div></div>
@@ -1977,7 +2036,7 @@ function escapeHtml(value) {
 
 function buildScoreboardHtml(state) {
   const ordered = [...state.players].sort((a, b) => b.score - a.score);
-  return ordered.map((player) => `<div class="score-line"><strong>${player.name}</strong> ${player.score}점<br><span>${formatScoreBreakdown(player.captured)}</span></div>`).join("");
+  return ordered.map((player) => `<div class="score-line"><strong>${player.name}</strong> ${player.score}점<br><span>${formatPlayerScoreBreakdown(player)}</span></div>`).join("");
 }
 
 function buildCoachChatReply(state, question) {
@@ -1990,7 +2049,7 @@ function buildCoachChatReply(state, question) {
   const rival = rivals[0];
 
   if (state.winner != null) {
-    return `끝난 판 기준으로 보면 <strong>${state.players[state.winner].name}</strong>이 앞섰고, 점수 근거는 ${formatScoreBreakdown(state.players[state.winner].captured)}입니다.`;
+    return `끝난 판 기준으로 보면 <strong>${state.players[state.winner].name}</strong>이 앞섰고, 점수 근거는 ${formatPlayerScoreBreakdown(state.players[state.winner])}입니다.`;
   }
   if (q.includes('고') || q.includes('스톱')) {
     const suggestion = recommendGoStop(state, USER_INDEX);
@@ -2008,7 +2067,7 @@ function buildCoachChatReply(state, question) {
   }
   if (q.includes('점수')) {
     const mine = state.players[USER_INDEX];
-    return `<strong>현재 점수</strong> 나는 ${mine.score}점이고, 근거는 ${formatScoreBreakdown(mine.captured)}입니다.`;
+    return `<strong>현재 점수</strong> 나는 ${mine.score}점이고, 근거는 ${formatPlayerScoreBreakdown(mine)}입니다.`;
   }
   return top
     ? `<strong>지금 한 수</strong> ${top.card.label}부터 보고, <strong>상대</strong>는 ${rival ? rival.player.name + ' ' + rival.trend : '아직 큰 위협 없음'} 쪽을 경계하세요.`
@@ -2142,7 +2201,7 @@ function evaluateGoStopOutcomes(state, playerIndex, options = {}) {
   const player = state.players[playerIndex];
   const orderedMoves = player.hand.map((card) => scoreMove(state, player, card)).sort((a, b) => b.score - a.score);
   const bestMove = orderedMoves[0] || null;
-  const rivalBest = Math.max(...state.players.filter((candidate) => candidate.seat !== player.seat).map((candidate) => evaluateScore(candidate.captured).score), 0);
+  const rivalBest = Math.max(...state.players.filter((candidate) => candidate.seat !== player.seat).map((candidate) => evaluatePlayerScore(candidate).score), 0);
   const lead = player.score - rivalBest;
   const heuristicStop = player.score >= 5 && (state.deck.length <= 4 || lead >= 2 || !bestMove || bestMove.score < 10);
   const heuristicGo = !!(bestMove && bestMove.matches.length > 0 && state.deck.length > 4);
@@ -2152,7 +2211,7 @@ function evaluateGoStopOutcomes(state, playerIndex, options = {}) {
   if (useLookahead) {
     const stopSnapshot = cloneGameState(state);
     stopBalance = withSimulationState(stopSnapshot, () => {
-      endGame(stopSnapshot, playerIndex);
+      endGame(stopSnapshot, playerIndex, "stop");
       return evaluateSimulationBalance(stopSnapshot);
     });
     const goSnapshot = cloneGameState(state);
@@ -2427,12 +2486,14 @@ function renderGoStopChoice(state) {
       const action = button.dataset.gostop;
       if (action === "stop") {
         state.pendingGoStopChoice = null;
-        logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 스톱을 선택했습니다. 근거는 ${choice.scoreBreakdown || formatScoreBreakdown(player.captured)}입니다.`);
-        endGame(state, choice.playerIndex);
+        logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 스톱을 선택했습니다. 근거는 ${choice.scoreBreakdown || formatPlayerScoreBreakdown(player)}입니다.`);
+        endGame(state, choice.playerIndex, "stop");
         return;
       }
       player.goCount += 1;
-      logEvent(state, "고/스톱", `${player.name}가 ${player.score}점에서 고를 선택했습니다. 당시 점수 근거는 ${choice.scoreBreakdown || formatScoreBreakdown(player.captured)}입니다.`);
+      const beforeGoScore = player.score;
+      player.score = evaluatePlayerScore(player).score;
+      logEvent(state, "고/스톱", `${player.name}가 ${beforeGoScore}점에서 고를 선택했습니다. 당시 점수 근거는 ${choice.scoreBreakdown || formatPlayerScoreBreakdown(player)}입니다.`);
       continueAfterGo(state, choice.playerIndex);
     });
   });
