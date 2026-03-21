@@ -460,6 +460,20 @@ button {
   gap: 10px;
 }
 
+.captured-layout.compact-opponent .captured-bright.is-empty,
+.captured-layout.compact-opponent .captured-ribbon.is-empty,
+.captured-layout.compact-opponent .captured-animal.is-empty,
+.captured-layout.compact-opponent .captured-junk.is-empty {
+  min-height: 22px;
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.03);
+}
+
+.captured-layout.compact-opponent .captured-middle.is-empty {
+  gap: 4px;
+}
+
 .captured-bright,
 .captured-ribbon,
 .captured-animal,
@@ -1223,8 +1237,8 @@ button {
 
 .public-zone.left-public,
 .public-zone.right-public {
-  width: 404px;
-  min-height: 324px;
+  width: 420px;
+  min-height: 336px;
   transform-origin: center;
 }
 
@@ -1238,9 +1252,10 @@ button {
 
 .left-seat .opponent-captured-strip .captured-layout,
 .right-seat .opponent-captured-strip .captured-layout {
-  min-width: 462px;
-  grid-template-columns: minmax(0, 0.56fr) minmax(0, 1.22fr) minmax(0, 1.98fr);
+  min-width: 486px;
+  grid-template-columns: minmax(0, 0.52fr) minmax(0, 1.12fr) minmax(0, 2.12fr);
   align-items: end;
+  column-gap: 12px;
 }
 
 .left-seat .opponent-captured-strip .captured-bright,
@@ -1251,28 +1266,28 @@ button {
 .right-seat .opponent-captured-strip .captured-ribbon,
 .right-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-height: 88px;
+  min-height: 78px;
 }
 
 .left-seat .opponent-captured-strip .captured-bright {
-  transform: translateY(-68px);
+  transform: translateY(-96px);
 }
 
 .right-seat .opponent-captured-strip .captured-bright {
-  transform: translateY(68px);
+  transform: translateY(96px);
 }
 
 .left-seat .opponent-captured-strip .captured-ribbon,
 .left-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-ribbon,
 .right-seat .opponent-captured-strip .captured-animal {
-  min-width: 146px;
+  min-width: 168px;
 }
 
 .left-seat .opponent-captured-strip .captured-junk,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-width: 226px;
-  min-height: 224px;
+  min-width: 250px;
+  min-height: 248px;
 }
 
 
@@ -1368,7 +1383,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 328px;
+  min-height: 344px;
   overflow: visible;
 }
 

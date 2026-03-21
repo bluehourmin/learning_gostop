@@ -830,8 +830,9 @@ function groupCapturedCards(cards) {
   return { bright, animal, ribbon, junkRows };
 }
 
-function renderCapturedLayout(cards) {
+function renderCapturedLayout(cards, options = {}) {
   const motion = app.state?.motion || createMotionState();
+  const compact = options.compact === true;
   const groups = groupCapturedCards(cards);
   const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
   const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
@@ -841,15 +842,20 @@ function renderCapturedLayout(cards) {
       ${row.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("")}
     </div>
   `).join("");
+  const brightClass = `captured-bright${brightHtml ? "" : " is-empty"}`;
+  const ribbonClass = `captured-ribbon${ribbonHtml ? "" : " is-empty"}`;
+  const animalClass = `captured-animal${animalHtml ? "" : " is-empty"}`;
+  const junkClass = `captured-junk${junkHtml ? "" : " is-empty"}`;
+  const middleClass = `captured-middle${(!ribbonHtml && !animalHtml) ? " is-empty" : ""}`;
 
   return `
-    <div class="captured-layout">
-      <div class="captured-bright">${brightHtml || "<span class='captured-empty'>광</span>"}</div>
-      <div class="captured-middle">
-        <div class="captured-ribbon">${ribbonHtml || "<span class='captured-empty'>띠</span>"}</div>
-        <div class="captured-animal">${animalHtml || "<span class='captured-empty'>열끗</span>"}</div>
+    <div class="captured-layout${compact ? " compact-opponent" : ""}">
+      <div class="${brightClass}">${brightHtml || (compact ? "" : "<span class='captured-empty'>광</span>")}</div>
+      <div class="${middleClass}">
+        <div class="${ribbonClass}">${ribbonHtml || (compact ? "" : "<span class='captured-empty'>띠</span>")}</div>
+        <div class="${animalClass}">${animalHtml || (compact ? "" : "<span class='captured-empty'>열끗</span>")}</div>
       </div>
-      <div class="captured-junk">${junkHtml || "<span class='captured-empty'>피</span>"}</div>
+      <div class="${junkClass}">${junkHtml || (compact ? "" : "<span class='captured-empty'>피</span>")}</div>
     </div>
   `;
 }
@@ -1641,6 +1647,13 @@ function finishTurn(state, playerIndex) {
   assessTutor(state);
   render();
   scheduleAiTurn();
+  window.setTimeout(() => {
+    if (app.state !== state) return;
+    if (state.winner != null || state.currentPlayer === USER_INDEX) return;
+    if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
+    if (app.pendingAiTimeout != null) return;
+    runAiTurn();
+  }, Math.max(450, Math.min(2200, PACE_DELAY[app.pace] + 120)));
 }
 
 function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null, options = {}) {
@@ -2001,7 +2014,7 @@ function renderSeat(player, options = {}) {
     `;
       }).join("");
 
-  const capturedLayout = renderCapturedLayout(player.captured);
+  const capturedLayout = renderCapturedLayout(player.captured, { compact: player.seat !== USER_INDEX });
   const publicZoneClass = player.seat === 1 ? "public-zone left-public" : player.seat === 2 ? "public-zone right-public" : "public-zone";
   const seatBody = `
     <div class="seat-header">
@@ -2594,8 +2607,7 @@ if (els.jokerToggleBtn) {
   els.jokerToggleBtn.addEventListener("click", () => {
     RULE_CONFIG.enableJokers = !RULE_CONFIG.enableJokers;
     syncOptionButtons();
-startAiWatchdog();
-startNewGame();
+    startNewGame();
   });
 }
 els.paceSlowBtn.addEventListener("click", () => setPace("slow"));
