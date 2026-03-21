@@ -1726,16 +1726,7 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
   if (isSseul) applyJunkSteal(state, playerIndex, "쓸");
   finishTurn(state, playerIndex);
   if (playerIndex === USER_INDEX) {
-    window.setTimeout(() => {
-      if (app.state !== state) return;
-      if (state.winner != null) return;
-      if (state.currentPlayer !== USER_INDEX) return;
-      if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
-      state.currentPlayer = (USER_INDEX + 1) % state.players.length;
-      assessTutor(state);
-      render();
-      scheduleAiTurn();
-    }, 180);
+    recoverUserTurnAfterMotion(state);
   }
   return true;
 }
@@ -2309,6 +2300,27 @@ function clearPendingChoice(state) {
   render();
 }
 
+function recoverUserTurnAfterMotion(state) {
+  window.setTimeout(() => {
+    if (app.state !== state || state.winner != null) return;
+    const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
+    if (motionActive) return;
+    if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) {
+      render();
+      return;
+    }
+    if (state.currentPlayer !== USER_INDEX) return;
+    state.currentPlayer = (USER_INDEX + 1) % state.players.length;
+    if (state.players[state.currentPlayer].hand.length === 0) {
+      endGame(state, null, "deck");
+      return;
+    }
+    assessTutor(state);
+    render();
+    scheduleAiTurn();
+  }, 760);
+}
+
 function renderPendingChoice(state) {
   document.querySelectorAll(".match-modal").forEach((modal) => modal.remove());
   if (state.pendingShakeChoice) {
@@ -2316,6 +2328,8 @@ function renderPendingChoice(state) {
     return;
   }
   if (state.pendingGoStopChoice) {
+    const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
+    if (motionActive) return;
     renderGoStopChoice(state);
     return;
   }
