@@ -1725,6 +1725,18 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
   if (isZzok) applyJunkSteal(state, playerIndex, "쪽");
   if (isSseul) applyJunkSteal(state, playerIndex, "쓸");
   finishTurn(state, playerIndex);
+  if (playerIndex === USER_INDEX) {
+    window.setTimeout(() => {
+      if (app.state !== state) return;
+      if (state.winner != null) return;
+      if (state.currentPlayer !== USER_INDEX) return;
+      if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
+      state.currentPlayer = (USER_INDEX + 1) % state.players.length;
+      assessTutor(state);
+      render();
+      scheduleAiTurn();
+    }, 180);
+  }
   return true;
 }
 
