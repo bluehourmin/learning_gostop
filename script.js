@@ -1749,7 +1749,7 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
   const isSseul = state.field.length === 0;
   if (isZzok) applyJunkSteal(state, playerIndex, "쪽");
   if (isSseul) applyJunkSteal(state, playerIndex, "쓸");
-  const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
+  const motionActive = state.motion && (state.motion.capturedIds?.length || state.motion.stockPulse);
   if (motionActive) {
     const patch = { ...state.motion };
     queueMotion(state, patch, () => finishTurn(state, playerIndex));
@@ -2213,7 +2213,7 @@ function renderField(state) {
   els.fieldArea.innerHTML = sortedField.map((card) => renderCardVisual(card, {
     recommended: targetIds.has(card.id),
     tooltip: fieldTooltip(card, state.field),
-    extraClass: state.motion?.fieldCardId === card.id ? ` motion-field-drop motion-seat-${state.motion.seat}` : ""
+    extraClass: ""
   })).join("");
   els.fieldRead.textContent = summarizeField(state.field);
   if (els.stockPile) {
@@ -2399,7 +2399,7 @@ function renderPendingChoice(state) {
     return;
   }
   if (state.pendingGoStopChoice) {
-    const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
+    const motionActive = state.motion && (state.motion.capturedIds?.length || state.motion.stockPulse);
     if (motionActive) return;
     renderGoStopChoice(state);
     return;

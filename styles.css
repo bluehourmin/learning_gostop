@@ -1287,12 +1287,18 @@ button {
   min-height: 198px;
 }
 
-.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw {
+.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw,
+.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
+  width: 54px;
+  overflow: visible;
+}
+
+.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw .card-visual {
   transform: rotate(90deg);
   transform-origin: center center;
 }
 
-.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
+.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw .card-visual {
   transform: rotate(-90deg);
   transform-origin: center center;
 }
