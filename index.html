@@ -37,6 +37,7 @@
         <button id="new-game-btn" class="primary">새 판 시작</button>
         <button id="advisor-toggle-btn" class="ghost">추천만 보기</button>
         <button id="joker-toggle-btn" class="ghost">조커 켜짐</button>
+        <button id="reference-open-btn" class="ghost">전체 패 보기</button>
       </div>
     </header>
     <main class="layout">
@@ -125,6 +126,34 @@
         </details>
       </section>
     </main>
+  </div>
+  <div id="reference-modal" class="reference-modal" hidden>
+    <div class="reference-backdrop" data-close-reference="true"></div>
+    <section class="reference-dialog" role="dialog" aria-modal="true" aria-labelledby="reference-title">
+      <div class="reference-header">
+        <div>
+          <p class="reference-eyebrow">초보용 참고표</p>
+          <h2 id="reference-title">전체 고스돕 패 보기</h2>
+        </div>
+        <button class="match-close-btn reference-close-btn" type="button" aria-label="참고표 닫기" data-close-reference="true">x</button>
+      </div>
+      <div class="reference-legend">
+        <div class="reference-chip-group">
+          <strong>단줄</strong>
+          <span class="rules-tag basic">홍단 1·2·3월</span>
+          <span class="rules-tag basic">청단 6·9·10월</span>
+          <span class="rules-tag basic">초단 4·5·7월</span>
+        </div>
+        <div class="reference-chip-group">
+          <strong>특수줄</strong>
+          <span class="rules-tag basic">고도리 2·4·8 열끗</span>
+          <span class="rules-tag basic">9월 술잔 겸용</span>
+          <span class="rules-tag basic">12월 쌍피</span>
+        </div>
+      </div>
+      <p class="reference-guide">내 손패와 상대 공개패를 같이 보면서, 내가 내는 월이 상대 단줄이나 고도리를 열어주는지 바로 확인해보세요.</p>
+      <div id="reference-grid" class="reference-grid"></div>
+    </section>
   </div>
   <script src="./script.js"></script>
 </body>

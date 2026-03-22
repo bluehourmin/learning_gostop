@@ -125,12 +125,22 @@ const els = {
   stockPile: document.getElementById("stock-pile"),
   chatLog: document.getElementById("chat-log"),
   chatForm: document.getElementById("chat-form"),
-  chatInput: document.getElementById("chat-input")
+  chatInput: document.getElementById("chat-input"),
+  referenceOpenBtn: document.getElementById("reference-open-btn"),
+  referenceModal: document.getElementById("reference-modal"),
+  referenceGrid: document.getElementById("reference-grid")
 };
 
 const PACE_DELAY = {
   slow: 2800,
   normal: 1800
+};
+
+const NAMED_COMBO_MONTHS = {
+  홍단: [1, 2, 3],
+  청단: [6, 9, 10],
+  초단: [4, 5, 7],
+  고도리: [2, 4, 8]
 };
 
 const RULE_CONFIG = {
@@ -187,6 +197,11 @@ function queueMotion(state, patch) {
     if (app.state !== state || !state.motion || state.motion.token !== token) return;
     state.motion = createMotionState();
     render();
+    if (state.pendingTurnFinish != null) {
+      const pendingSeat = state.pendingTurnFinish;
+      state.pendingTurnFinish = null;
+      finishTurn(state, pendingSeat);
+    }
   }, 560);
 }
 
@@ -226,6 +241,7 @@ function createGame() {
     pendingFlexibleChoice: null,
     pendingGoStopChoice: null,
     pendingShakeChoice: null,
+    pendingTurnFinish: null,
     tutor: null,
     logs: [],
     winner: null,
@@ -310,7 +326,7 @@ function resolveBombPlay(state, playerIndex, cardId, month) {
   queueMotion(state, { capturedIds: [...removed.map((card) => card.id), ...matches.map((card) => card.id)], seat: playerIndex, stockPulse: false });
   logEvent(state, "폭탄", `${player.name}가 ${month}월 세 장을 한꺼번에 공개해 ${matches.length ? matches.map((card) => card.label).join(', ') + '까지' : '바닥 짝 없이'} 정리했습니다.`);
   drawAndResolve(state, playerIndex, { playedCard: removed[0], playMatchCount: matches.length, drawCaptured: [] });
-  finishTurn(state, playerIndex);
+  queueTurnFinish(state, playerIndex);
   return true;
 }
 
@@ -1622,6 +1638,15 @@ function drawAndResolve(state, playerIndex, turnContext = null) {
   }
 }
 
+function queueTurnFinish(state, playerIndex) {
+  const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
+  if (motionActive) {
+    state.pendingTurnFinish = playerIndex;
+    return;
+  }
+  finishTurn(state, playerIndex);
+}
+
 function finishTurn(state, playerIndex) {
   if (state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) {
     render();
@@ -1724,10 +1749,7 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
   const isSseul = state.field.length === 0;
   if (isZzok) applyJunkSteal(state, playerIndex, "쪽");
   if (isSseul) applyJunkSteal(state, playerIndex, "쓸");
-  finishTurn(state, playerIndex);
-  if (playerIndex === USER_INDEX) {
-    recoverUserTurnAfterMotion(state);
-  }
+  queueTurnFinish(state, playerIndex);
   return true;
 }
 
@@ -1865,6 +1887,60 @@ function renderPaceControls() {
   } else {
     els.nextTurnBtn.textContent = "다음 턴 보기";
   }
+}
+
+function getReferenceTags(card) {
+  const tags = [];
+  if (card.type === "bright") tags.push("광");
+  if (card.type === "animal") tags.push("열끗");
+  if (card.type === "ribbon") tags.push("띠");
+  if (card.type === "junk") tags.push(getJunkValue(card) >= 2 ? "쌍피" : "피");
+  if (card.type === "ribbon" && NAMED_COMBO_MONTHS.홍단.includes(card.month)) tags.push("홍단");
+  if (card.type === "ribbon" && NAMED_COMBO_MONTHS.청단.includes(card.month)) tags.push("청단");
+  if (card.type === "ribbon" && NAMED_COMBO_MONTHS.초단.includes(card.month)) tags.push("초단");
+  if (getEffectiveType(card) === "animal" && NAMED_COMBO_MONTHS.고도리.includes(card.month)) tags.push("고도리");
+  if (card.month === 9 && card.flexibleScore?.length) tags.push("겸용");
+  return tags;
+}
+
+function renderReferenceGuide() {
+  if (!els.referenceGrid) return;
+  const months = MONTH_NAMES.map((_, index) => index + 1);
+  els.referenceGrid.innerHTML = months.map((month) => {
+    const cards = CARD_LIBRARY.filter((card) => card.month === month);
+    const monthTags = new Set();
+    cards.forEach((card) => getReferenceTags(card).forEach((tag) => monthTags.add(tag)));
+    return       '<article class="reference-month">' +
+        '<div class="reference-month-header">' +
+          '<div>' +
+            '<strong>' + MONTH_NAMES[month - 1] + '</strong>' +
+            '<span>' + MONTH_THEME[month].name + '</span>' +
+          '</div>' +
+          '<div class="reference-month-tags">' + [...monthTags].map((tag) => '<span class="reference-tag">' + tag + '</span>').join('') + '</div>' +
+        '</div>' +
+        '<div class="reference-card-grid">' + cards.map((card) =>           '<div class="reference-card-item">' +
+            renderCardVisual(card, { small: true }) +
+            '<div class="reference-card-meta">' +
+              '<strong>' + card.label + '</strong>' +
+              '<span>' + getReferenceTags(card).join(' · ') + '</span>' +
+            '</div>' +
+          '</div>'
+        ).join('') + '</div>' +
+      '</article>';
+  }).join('');
+}
+
+function openReferenceModal() {
+  if (!els.referenceModal) return;
+  renderReferenceGuide();
+  els.referenceModal.hidden = false;
+  document.body.classList.add('reference-open');
+}
+
+function closeReferenceModal() {
+  if (!els.referenceModal) return;
+  els.referenceModal.hidden = true;
+  document.body.classList.remove('reference-open');
 }
 
 function renderCardVisual(card, options = {}) {
@@ -2163,7 +2239,6 @@ function renderSeats(state) {
     <div class="user-meta">
       <div>
         <div class="seat-name">내 손패</div>
-        <p class="user-help">실제 카드를 눌러 진행하세요. 내가 낸 뒤에는 자동으로 다음 사람이 내고, 그때마다 가이드가 다시 계산됩니다.</p>
       </div>
     </div>
     ${user.seatBody}
@@ -2298,27 +2373,6 @@ function renderLogs(state) {
 function clearPendingChoice(state) {
   state.pendingChoice = null;
   render();
-}
-
-function recoverUserTurnAfterMotion(state) {
-  window.setTimeout(() => {
-    if (app.state !== state || state.winner != null) return;
-    const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
-    if (motionActive) return;
-    if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) {
-      render();
-      return;
-    }
-    if (state.currentPlayer !== USER_INDEX) return;
-    state.currentPlayer = (USER_INDEX + 1) % state.players.length;
-    if (state.players[state.currentPlayer].hand.length === 0) {
-      endGame(state, null, "deck");
-      return;
-    }
-    assessTutor(state);
-    render();
-    scheduleAiTurn();
-  }, 760);
 }
 
 function renderPendingChoice(state) {
@@ -2644,6 +2698,17 @@ els.nextTurnBtn.addEventListener("click", () => {
     runAiTurn();
   }
 });
+if (els.referenceOpenBtn) {
+  els.referenceOpenBtn.addEventListener("click", openReferenceModal);
+}
+if (els.referenceModal) {
+  els.referenceModal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-close-reference]")) closeReferenceModal();
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !els.referenceModal.hidden) closeReferenceModal();
+  });
+}
 if (els.chatForm) {
   els.chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
