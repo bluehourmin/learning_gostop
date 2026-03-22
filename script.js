@@ -1965,7 +1965,7 @@ function renderCardVisual(card, options = {}) {
   const playableClass = options.playable ? " playable" : "";
   const sizeClass = options.small ? " small" : "";
   const hiddenClass = options.hidden ? " hidden" : "";
-  const extraClass = options.extraClass || "";
+  const extraClass = options.extraClass ? " " + options.extraClass.trim() : "";
   const tooltip = options.tooltip ? ` data-tooltip="${options.tooltip}"` : "";
   return `
     <div class="card-shell${recommendationClass}${playableClass}${sizeClass}${hiddenClass}${extraClass}" title="${card.label}"${tooltip}>
