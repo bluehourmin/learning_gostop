@@ -184,7 +184,20 @@ function shuffle(cards) {
 }
 
 function createMotionState() {
-  return { fieldCardId: null, capturedIds: [], seat: null, stockPulse: false, token: 0 };
+  return { fieldCardId: null, capturedIds: [], seat: null, stockPulse: false, token: 0, startedAt: 0 };
+}
+
+function settleMotion(state, token, gameToken) {
+  if (app.gameToken !== gameToken) return;
+  if (app.state !== state || !state.motion || state.motion.token !== token) return;
+  state.motion = createMotionState();
+  const afterMotion = app.afterMotionCallback;
+  app.afterMotionCallback = null;
+  if (typeof afterMotion === "function") {
+    afterMotion();
+    return;
+  }
+  render();
 }
 
 function queueMotion(state, patch, onDone = null) {
@@ -195,19 +208,11 @@ function queueMotion(state, patch, onDone = null) {
   app.afterMotionCallback = typeof onDone === "function" ? onDone : null;
   const token = Date.now() + Math.random();
   const gameToken = state.gameToken;
-  state.motion = { ...createMotionState(), ...patch, token };
+  state.motion = { ...createMotionState(), ...patch, token, startedAt: Date.now() };
   render();
   app.motionTimeout = window.setTimeout(() => {
-    if (app.gameToken !== gameToken) return;
-    if (app.state !== state || !state.motion || state.motion.token !== token) return;
-    state.motion = createMotionState();
-    const afterMotion = app.afterMotionCallback;
-    app.afterMotionCallback = null;
-    if (typeof afterMotion === "function") {
-      afterMotion();
-      return;
-    }
-    render();
+    app.motionTimeout = null;
+    settleMotion(state, token, gameToken);
   }, 560);
 }
 
@@ -1833,6 +1838,14 @@ function startAiWatchdog() {
     const state = app.state;
     if (!state || state.winner != null) return;
     const hasPendingModal = state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice;
+    if (state.motion && state.motion.token && state.motion.startedAt && Date.now() - state.motion.startedAt > 1200) {
+      if (app.motionTimeout != null) {
+        window.clearTimeout(app.motionTimeout);
+        app.motionTimeout = null;
+      }
+      settleMotion(state, state.motion.token, state.gameToken);
+      return;
+    }
     if (state.currentPlayer === USER_INDEX) return;
     if (hasPendingModal) return;
     if (app.pendingAiTimeout != null) return;

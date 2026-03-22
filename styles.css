@@ -481,7 +481,7 @@ button {
   display: flex;
   flex-wrap: nowrap;
   gap: 0;
-  align-items: flex-start;
+  align-items: center;
   min-height: 54px;
 }
 
@@ -504,7 +504,7 @@ button {
 .captured-ribbon .card-shell.small + .card-shell.small,
 .captured-animal .card-shell.small + .card-shell.small,
 .captured-junk-row .card-shell.small + .card-shell.small {
-  margin-left: -31px;
+  margin-left: -34px;
 }
 
 .captured-bright .card-shell.small,
@@ -1248,9 +1248,9 @@ button {
 .right-seat .opponent-captured-strip .captured-layout {
   width: 100%;
   min-width: 0;
-  grid-template-columns: 88px minmax(112px, 132px) minmax(140px, 1fr);
+  grid-template-columns: 72px minmax(92px, 108px) minmax(112px, 1fr);
   align-items: start;
-  column-gap: 14px;
+  column-gap: 10px;
 }
 
 .left-seat .opponent-captured-strip .captured-bright,
@@ -1261,7 +1261,7 @@ button {
 .right-seat .opponent-captured-strip .captured-ribbon,
 .right-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-height: 72px;
+  min-height: 64px;
 }
 
 .left-seat .opponent-captured-strip .captured-bright {
@@ -1284,7 +1284,7 @@ button {
 .left-seat .opponent-captured-strip .captured-junk,
 .right-seat .opponent-captured-strip .captured-junk {
   min-width: 0;
-  min-height: 228px;
+  min-height: 198px;
 }
 
 .left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw {
@@ -1402,7 +1402,7 @@ button {
 }
 
 .side-seat .card-shell.small {
-  width: 48px;
+  width: 44px;
 }
 
 .user-seat {
