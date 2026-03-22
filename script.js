@@ -91,6 +91,7 @@ const app = {
   pace: "slow",
   pendingAiTimeout: null,
   motionTimeout: null,
+  afterMotionCallback: null,
   aiWatchdog: null,
   dealerIndex: null
 };
@@ -185,23 +186,25 @@ function createMotionState() {
   return { fieldCardId: null, capturedIds: [], seat: null, stockPulse: false, token: 0 };
 }
 
-function queueMotion(state, patch) {
+function queueMotion(state, patch, onDone = null) {
   if (app.motionTimeout != null) {
     window.clearTimeout(app.motionTimeout);
     app.motionTimeout = null;
   }
+  app.afterMotionCallback = typeof onDone === "function" ? onDone : null;
   const token = Date.now() + Math.random();
   state.motion = { ...createMotionState(), ...patch, token };
   render();
   app.motionTimeout = window.setTimeout(() => {
     if (app.state !== state || !state.motion || state.motion.token !== token) return;
     state.motion = createMotionState();
-    render();
-    if (state.pendingTurnFinish != null) {
-      const pendingSeat = state.pendingTurnFinish;
-      state.pendingTurnFinish = null;
-      finishTurn(state, pendingSeat);
+    const afterMotion = app.afterMotionCallback;
+    app.afterMotionCallback = null;
+    if (typeof afterMotion === "function") {
+      afterMotion();
+      return;
     }
+    render();
   }, 560);
 }
 
@@ -241,7 +244,6 @@ function createGame() {
     pendingFlexibleChoice: null,
     pendingGoStopChoice: null,
     pendingShakeChoice: null,
-    pendingTurnFinish: null,
     tutor: null,
     logs: [],
     winner: null,
@@ -323,10 +325,9 @@ function resolveBombPlay(state, playerIndex, cardId, month) {
   const matches = state.field.filter((fieldCard) => fieldCard.month === month);
   matches.forEach((match) => removeCard(state.field, match.id));
   resolveCapture(player, removed[0], [...removed.slice(1), ...matches]);
-  queueMotion(state, { capturedIds: [...removed.map((card) => card.id), ...matches.map((card) => card.id)], seat: playerIndex, stockPulse: false });
   logEvent(state, "폭탄", `${player.name}가 ${month}월 세 장을 한꺼번에 공개해 ${matches.length ? matches.map((card) => card.label).join(', ') + '까지' : '바닥 짝 없이'} 정리했습니다.`);
   drawAndResolve(state, playerIndex, { playedCard: removed[0], playMatchCount: matches.length, drawCaptured: [] });
-  queueTurnFinish(state, playerIndex);
+  queueMotion(state, { capturedIds: [...removed.map((card) => card.id), ...matches.map((card) => card.id)], seat: playerIndex, stockPulse: true }, () => finishTurn(state, playerIndex));
   return true;
 }
 
@@ -849,13 +850,18 @@ function groupCapturedCards(cards) {
 function renderCapturedLayout(cards, options = {}) {
   const motion = app.state?.motion || createMotionState();
   const compact = options.compact === true;
+  const seatRotationClass = options.seat === 1 ? " opponent-rot-cw" : options.seat === 2 ? " opponent-rot-ccw" : "";
   const groups = groupCapturedCards(cards);
-  const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
-  const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
-  const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("");
+  const buildExtraClass = (card) => {
+    const motionClass = motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "";
+    return (motionClass + seatRotationClass).trim();
+  };
+  const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
+  const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
+  const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const junkHtml = [...groups.junkRows].reverse().map((row) => `
     <div class="captured-junk-row">
-      ${row.map((card) => renderCardVisual(card, { small: true, extraClass: motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "" })).join("")}
+      ${row.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("")}
     </div>
   `).join("");
   const brightClass = `captured-bright${brightHtml ? "" : " is-empty"}`;
@@ -1638,15 +1644,6 @@ function drawAndResolve(state, playerIndex, turnContext = null) {
   }
 }
 
-function queueTurnFinish(state, playerIndex) {
-  const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
-  if (motionActive) {
-    state.pendingTurnFinish = playerIndex;
-    return;
-  }
-  finishTurn(state, playerIndex);
-}
-
 function finishTurn(state, playerIndex) {
   if (state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) {
     render();
@@ -1672,13 +1669,6 @@ function finishTurn(state, playerIndex) {
   assessTutor(state);
   render();
   scheduleAiTurn();
-  window.setTimeout(() => {
-    if (app.state !== state) return;
-    if (state.winner != null || state.currentPlayer === USER_INDEX) return;
-    if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
-    if (app.pendingAiTimeout != null) return;
-    runAiTurn();
-  }, Math.max(450, Math.min(2200, PACE_DELAY[app.pace] + 120)));
 }
 
 function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null, options = {}) {
@@ -1700,12 +1690,13 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
       return true;
     }
     player.score = evaluatePlayerScore(player).score;
-    queueMotion(state, { capturedIds: [card.id], seat: playerIndex, stockPulse: true });
-    assessTutor(state);
-    render();
-    if (playerIndex !== USER_INDEX) {
-      window.setTimeout(runAiTurn, 700);
-    }
+    queueMotion(state, { capturedIds: [card.id], seat: playerIndex, stockPulse: true }, () => {
+      assessTutor(state);
+      render();
+      if (playerIndex !== USER_INDEX && state.winner == null) {
+        scheduleAiTurn();
+      }
+    });
     return true;
   }
 
@@ -1749,7 +1740,13 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
   const isSseul = state.field.length === 0;
   if (isZzok) applyJunkSteal(state, playerIndex, "쪽");
   if (isSseul) applyJunkSteal(state, playerIndex, "쓸");
-  queueTurnFinish(state, playerIndex);
+  const motionActive = state.motion && (state.motion.fieldCardId || state.motion.capturedIds?.length || state.motion.stockPulse);
+  if (motionActive) {
+    const patch = { ...state.motion };
+    queueMotion(state, patch, () => finishTurn(state, playerIndex));
+  } else {
+    finishTurn(state, playerIndex);
+  }
   return true;
 }
 
@@ -1829,12 +1826,13 @@ function startAiWatchdog() {
   app.aiWatchdog = window.setInterval(() => {
     const state = app.state;
     if (!state || state.winner != null) return;
+    const hasPendingModal = state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice;
     if (state.currentPlayer === USER_INDEX) return;
-    if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
+    if (hasPendingModal) return;
     if (app.pendingAiTimeout != null) return;
     if (app.pace === "step") return;
     scheduleAiTurn();
-  }, 1200);
+  }, 500);
 }
 
 function setPace(nextPace) {
@@ -2093,7 +2091,7 @@ function renderSeat(player, options = {}) {
     `;
       }).join("");
 
-  const capturedLayout = renderCapturedLayout(player.captured, { compact: player.seat !== USER_INDEX });
+  const capturedLayout = renderCapturedLayout(player.captured, { compact: player.seat !== USER_INDEX, seat: player.seat });
   const publicZoneClass = player.seat === 1 ? "public-zone left-public" : player.seat === 2 ? "public-zone right-public" : "public-zone";
   const seatBody = `
     <div class="seat-header">
@@ -2672,6 +2670,12 @@ function render() {
 
 function startNewGame() {
   clearScheduledAiTurn();
+  if (app.motionTimeout != null) {
+    window.clearTimeout(app.motionTimeout);
+    app.motionTimeout = null;
+  }
+  app.afterMotionCallback = null;
+  document.querySelectorAll(".match-modal").forEach((modal) => modal.remove());
   app.state = createGame();
   render();
   scheduleAiTurn();

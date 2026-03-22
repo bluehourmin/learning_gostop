@@ -1287,6 +1287,16 @@ button {
   min-height: 228px;
 }
 
+.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw {
+  transform: rotate(90deg);
+  transform-origin: center center;
+}
+
+.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
+  transform: rotate(-90deg);
+  transform-origin: center center;
+}
+
 
 .recommendation-card.compact {
   border-style: dashed;
