@@ -93,7 +93,8 @@ const app = {
   motionTimeout: null,
   afterMotionCallback: null,
   aiWatchdog: null,
-  dealerIndex: null
+  dealerIndex: null,
+  gameToken: 0
 };
 
 const els = {
@@ -193,9 +194,11 @@ function queueMotion(state, patch, onDone = null) {
   }
   app.afterMotionCallback = typeof onDone === "function" ? onDone : null;
   const token = Date.now() + Math.random();
+  const gameToken = state.gameToken;
   state.motion = { ...createMotionState(), ...patch, token };
   render();
   app.motionTimeout = window.setTimeout(() => {
+    if (app.gameToken !== gameToken) return;
     if (app.state !== state || !state.motion || state.motion.token !== token) return;
     state.motion = createMotionState();
     const afterMotion = app.afterMotionCallback;
@@ -249,7 +252,8 @@ function createGame() {
     winner: null,
     endReason: null,
     motion: createMotionState(),
-    chatHistory: [{ role: "assistant", text: "지금 판 기준으로 같이 보겠습니다. 헷갈리는 패나 고/스톱, 상대 흐름을 물어보세요." }]
+    chatHistory: [{ role: "assistant", text: "지금 판 기준으로 같이 보겠습니다. 헷갈리는 패나 고/스톱, 상대 흐름을 물어보세요." }],
+    gameToken: app.gameToken
   };
 
   const openingJokers = field.filter((card) => card.type === "joker");
@@ -1804,7 +1808,9 @@ function scheduleAiTurn() {
     renderPaceControls();
     return;
   }
+  const gameToken = state.gameToken;
   app.pendingAiTimeout = window.setTimeout(() => {
+    if (app.gameToken !== gameToken) return;
     app.pendingAiTimeout = null;
     runAiTurn();
   }, PACE_DELAY[app.pace]);
@@ -2670,6 +2676,7 @@ function render() {
 
 function startNewGame() {
   clearScheduledAiTurn();
+  app.gameToken += 1;
   if (app.motionTimeout != null) {
     window.clearTimeout(app.motionTimeout);
     app.motionTimeout = null;
