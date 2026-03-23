@@ -1135,14 +1135,9 @@ button {
   margin: 22px 0 34px;
 }
 
-.left-seat .captured-strip .card-shell.small {
-  transform: rotate(90deg);
-  transform-origin: center;
-}
-
+.left-seat .captured-strip .card-shell.small,
 .right-seat .captured-strip .card-shell.small {
-  transform: rotate(-90deg);
-  transform-origin: center;
+  transform: none;
 }
 
 .left-seat .captured-bright,
@@ -1293,13 +1288,15 @@ button {
   overflow: visible;
 }
 
-.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw .card-visual {
-  transform: rotate(90deg);
+.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw .card-visual,
+.left-seat .opponent-captured-strip .captured-junk-row .card-shell.small .card-visual {
+  transform: rotate(90deg) !important;
   transform-origin: center center;
 }
 
-.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw .card-visual {
-  transform: rotate(-90deg);
+.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw .card-visual,
+.right-seat .opponent-captured-strip .captured-junk-row .card-shell.small .card-visual {
+  transform: rotate(-90deg) !important;
   transform-origin: center center;
 }
 
