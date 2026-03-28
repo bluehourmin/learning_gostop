@@ -1219,11 +1219,11 @@ button {
 
 
 .opponent-captured-strip {
-  overflow: hidden;
+  overflow: visible;
   min-height: 290px;
   display: flex;
-  align-items: stretch;
-  justify-content: stretch;
+  align-items: center;
+  justify-content: center;
 }
 
 .public-zone {
@@ -1232,20 +1232,23 @@ button {
 
 .public-zone.left-public,
 .public-zone.right-public {
-  width: 100%;
-  min-height: 100%;
-  transform: none;
-  display: flex;
-  align-items: stretch;
+  width: 360px;
+  min-height: 280px;
+  transform-origin: center;
+}
+
+.public-zone.left-public {
+  transform: rotate(90deg);
+}
+
+.public-zone.right-public {
+  transform: rotate(-90deg);
 }
 
 .left-seat .opponent-captured-strip .captured-layout,
 .right-seat .opponent-captured-strip .captured-layout {
-  width: 100%;
-  min-width: 0;
-  grid-template-columns: 72px minmax(92px, 108px) minmax(112px, 1fr);
-  align-items: start;
-  column-gap: 10px;
+  min-width: 400px;
+  grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.15fr) minmax(0, 1.55fr);
 }
 
 .left-seat .opponent-captured-strip .captured-bright,
@@ -1256,48 +1259,28 @@ button {
 .right-seat .opponent-captured-strip .captured-ribbon,
 .right-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-height: 64px;
+  min-height: 88px;
 }
 
 .left-seat .opponent-captured-strip .captured-bright {
-  margin-top: -22px;
-  transform: none;
+  transform: translateY(-44px);
 }
 
 .right-seat .opponent-captured-strip .captured-bright {
-  margin-top: 28px;
-  transform: none;
+  transform: translateY(44px);
 }
 
 .left-seat .opponent-captured-strip .captured-ribbon,
 .left-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-ribbon,
 .right-seat .opponent-captured-strip .captured-animal {
-  min-width: 0;
+  min-width: 124px;
 }
 
 .left-seat .opponent-captured-strip .captured-junk,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-width: 0;
-  min-height: 198px;
-}
-
-.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw,
-.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
-  width: 54px;
-  overflow: visible;
-}
-
-.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw .card-visual,
-.left-seat .opponent-captured-strip .captured-junk-row .card-shell.small .card-visual {
-  transform: rotate(90deg) !important;
-  transform-origin: center center;
-}
-
-.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw .card-visual,
-.right-seat .opponent-captured-strip .captured-junk-row .card-shell.small .card-visual {
-  transform: rotate(-90deg) !important;
-  transform-origin: center center;
+  min-width: 170px;
+  min-height: 170px;
 }
 
 
@@ -1762,14 +1745,14 @@ button {
 .reference-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .reference-month {
-  padding: 16px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.68);
+  padding: 12px 12px 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(120, 76, 44, 0.12);
 }
 
@@ -1781,15 +1764,25 @@ button {
   margin-bottom: 10px;
 }
 
+.reference-month-header.compact {
+  margin-bottom: 8px;
+}
+
+.reference-month-copy {
+  display: grid;
+  gap: 2px;
+}
+
 .reference-month-header strong {
   display: block;
   color: #4b2412;
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .reference-month-header span {
   color: #86634b;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .reference-month-tags {
@@ -1814,10 +1807,23 @@ button {
   gap: 10px;
 }
 
+.reference-card-grid.compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .reference-card-item {
   display: grid;
   gap: 6px;
   justify-items: start;
+}
+
+.reference-card-item.compact {
+  justify-items: center;
+}
+
+.reference-card-item.compact .card-shell.small {
+  width: 52px;
 }
 
 .reference-card-meta {

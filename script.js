@@ -1925,25 +1925,21 @@ function renderReferenceGuide() {
   const months = MONTH_NAMES.map((_, index) => index + 1);
   els.referenceGrid.innerHTML = months.map((month) => {
     const cards = CARD_LIBRARY.filter((card) => card.month === month);
-    const monthTags = new Set();
-    cards.forEach((card) => getReferenceTags(card).forEach((tag) => monthTags.add(tag)));
-    return       '<article class="reference-month">' +
-        '<div class="reference-month-header">' +
-          '<div>' +
-            '<strong>' + MONTH_NAMES[month - 1] + '</strong>' +
-            '<span>' + MONTH_THEME[month].name + '</span>' +
-          '</div>' +
-          '<div class="reference-month-tags">' + [...monthTags].map((tag) => '<span class="reference-tag">' + tag + '</span>').join('') + '</div>' +
+    const monthTags = [...new Set(cards.flatMap((card) => getReferenceTags(card)))];
+    const featureText = monthTags.length ? monthTags.join(' · ') : '피 위주';
+    return '<article class="reference-month">' +
+      '<div class="reference-month-header compact">' +
+        '<div class="reference-month-copy">' +
+          '<strong>' + month + '월</strong>' +
+          '<span>' + MONTH_THEME[month].name + ' · ' + featureText + '</span>' +
         '</div>' +
-        '<div class="reference-card-grid">' + cards.map((card) =>           '<div class="reference-card-item">' +
-            renderCardVisual(card, { small: true }) +
-            '<div class="reference-card-meta">' +
-              '<strong>' + card.label + '</strong>' +
-              '<span>' + getReferenceTags(card).join(' · ') + '</span>' +
-            '</div>' +
-          '</div>'
-        ).join('') + '</div>' +
-      '</article>';
+      '</div>' +
+      '<div class="reference-card-grid compact">' + cards.map((card) =>
+        '<div class="reference-card-item compact">' +
+          renderCardVisual(card, { small: true }) +
+        '</div>'
+      ).join('') + '</div>' +
+    '</article>';
   }).join('');
 }
 
