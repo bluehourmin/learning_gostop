@@ -1604,11 +1604,18 @@ function maybeHandleGoStop(state, playerIndex) {
   render();
   return true;
 }
-function drawAndResolve(state, playerIndex, turnContext = null) {
+function drawAndResolve(state, playerIndex, turnContext = null, onDone = null) {
   if (!state.deck.length) {
     endGame(state);
     return;
   }
+  const finishDraw = () => {
+    if (typeof onDone === "function") {
+      onDone();
+      return;
+    }
+    render();
+  };
   const player = state.players[playerIndex];
   const drawn = state.deck.pop();
   if (turnContext) {
@@ -1621,7 +1628,7 @@ function drawAndResolve(state, playerIndex, turnContext = null) {
       turnContext.drawMatchCount = -1;
       turnContext.drawCaptured = [];
     }
-    queueMotion(state, { capturedIds: [drawn.id], seat: playerIndex, stockPulse: true });
+    queueMotion(state, { capturedIds: [drawn.id], seat: playerIndex, stockPulse: true }, finishDraw);
     logEvent(state, `${player.name} 뒤집기`, `${drawn.label}를 뒤집어 피를 더 챙겼습니다.`);
     return;
   }
@@ -1633,12 +1640,12 @@ function drawAndResolve(state, playerIndex, turnContext = null) {
   }
   if (matches.length === 0) {
     state.field.push(drawn);
-    queueMotion(state, { fieldCardId: drawn.id, seat: playerIndex, stockPulse: true });
+    queueMotion(state, { fieldCardId: drawn.id, seat: playerIndex, stockPulse: true }, finishDraw);
     logEvent(state, `${player.name} 뒤집기`, `${drawn.label}는 바닥에 남았습니다.`);
   } else if (matches.length === 1) {
     removeCard(state.field, matches[0].id);
     resolveCapture(player, drawn, [matches[0]]);
-    queueMotion(state, { capturedIds: [drawn.id, matches[0].id], seat: playerIndex, stockPulse: true });
+    queueMotion(state, { capturedIds: [drawn.id, matches[0].id], seat: playerIndex, stockPulse: true }, finishDraw);
     logEvent(state, `${player.name} 뒤집기`, `${drawn.label}로 ${matches[0].label}을 챙겼습니다.`);
     queueFlexibleChoiceIfNeeded(state, playerIndex, [drawn, matches[0]]);
     if (turnContext) turnContext.drawCaptured = [matches[0]];
@@ -1646,7 +1653,7 @@ function drawAndResolve(state, playerIndex, turnContext = null) {
     const target = chooseBestCaptureTarget(state, player, drawn, matches);
     removeCard(state.field, target.id);
     resolveCapture(player, drawn, [target]);
-    queueMotion(state, { capturedIds: [drawn.id, target.id], seat: playerIndex, stockPulse: true });
+    queueMotion(state, { capturedIds: [drawn.id, target.id], seat: playerIndex, stockPulse: true }, finishDraw);
     logEvent(state, `${player.name} 뒤집기`, `${drawn.label}로 ${target.label}을 골라 가져갔습니다.`);
     queueFlexibleChoiceIfNeeded(state, playerIndex, [drawn, target]);
     if (turnContext) turnContext.drawCaptured = [target];
@@ -1709,15 +1716,25 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
     return true;
   }
 
+  const continueAfterPlay = () => {
+    drawAndResolve(state, playerIndex, turnContext, () => {
+      const isZzok = card.type !== "joker" && turnContext.playMatchCount === 1 && turnContext.drawn && turnContext.drawn.month === card.month && turnContext.drawMatchCount === 1;
+      const isSseul = state.field.length === 0;
+      if (isZzok) applyJunkSteal(state, playerIndex, "쪽");
+      if (isSseul) applyJunkSteal(state, playerIndex, "쓸");
+      finishTurn(state, playerIndex);
+    });
+  };
+
   const matches = initialMatches;
   if (matches.length === 0) {
     state.field.push(card);
-    queueMotion(state, { fieldCardId: card.id, seat: playerIndex, stockPulse: false });
+    queueMotion(state, { fieldCardId: card.id, seat: playerIndex, stockPulse: false }, continueAfterPlay);
     logEvent(state, `${player.name}의 선택`, `${card.label}를 바닥에 냈습니다.`);
   } else if (matches.length === 1) {
     removeCard(state.field, matches[0].id);
     resolveCapture(player, card, [matches[0]]);
-    queueMotion(state, { capturedIds: [card.id, matches[0].id], seat: playerIndex, stockPulse: false });
+    queueMotion(state, { capturedIds: [card.id, matches[0].id], seat: playerIndex, stockPulse: false }, continueAfterPlay);
     logEvent(state, `${player.name}의 선택`, `${card.label}로 ${matches[0].label}을 먹었습니다.`);
     queueFlexibleChoiceIfNeeded(state, playerIndex, [card, matches[0]]);
   } else if (matches.length === 2) {
@@ -1733,29 +1750,17 @@ function resolveCardPlay(state, playerIndex, cardId, preferredFieldCardId = null
     }
     removeCard(state.field, target.id);
     resolveCapture(player, card, [target]);
-    queueMotion(state, { capturedIds: [card.id, target.id], seat: playerIndex, stockPulse: false });
+    queueMotion(state, { capturedIds: [card.id, target.id], seat: playerIndex, stockPulse: false }, continueAfterPlay);
     logEvent(state, `${player.name}의 선택`, `${card.label}로 ${target.label}을 선택해 먹었습니다.`);
     queueFlexibleChoiceIfNeeded(state, playerIndex, [card, target]);
   } else {
     matches.forEach((match) => removeCard(state.field, match.id));
     resolveCapture(player, card, matches);
-    queueMotion(state, { capturedIds: [card.id, ...matches.map((match) => match.id)], seat: playerIndex, stockPulse: false });
+    queueMotion(state, { capturedIds: [card.id, ...matches.map((match) => match.id)], seat: playerIndex, stockPulse: false }, continueAfterPlay);
     logEvent(state, `${player.name}의 선택`, `${card.label}로 세 장 깔린 월을 정리했습니다.`);
     queueFlexibleChoiceIfNeeded(state, playerIndex, [card, ...matches]);
   }
 
-  drawAndResolve(state, playerIndex, turnContext);
-  const isZzok = card.type !== "joker" && turnContext.playMatchCount === 1 && turnContext.drawn && turnContext.drawn.month === card.month && turnContext.drawMatchCount === 1;
-  const isSseul = state.field.length === 0;
-  if (isZzok) applyJunkSteal(state, playerIndex, "쪽");
-  if (isSseul) applyJunkSteal(state, playerIndex, "쓸");
-  const motionActive = state.motion && (state.motion.capturedIds?.length || state.motion.stockPulse);
-  if (motionActive) {
-    const patch = { ...state.motion };
-    queueMotion(state, patch, () => finishTurn(state, playerIndex));
-  } else {
-    finishTurn(state, playerIndex);
-  }
   return true;
 }
 
@@ -2206,11 +2211,15 @@ function renderField(state) {
   const topRecommendation = state.tutor?.recommendations[0];
   const targetIds = new Set(topRecommendation?.matches.map((card) => card.id) || []);
   const sortedField = sortFieldCards(state.field);
-  els.fieldArea.innerHTML = sortedField.map((card) => renderCardVisual(card, {
-    recommended: targetIds.has(card.id),
-    tooltip: fieldTooltip(card, state.field),
-    extraClass: ""
-  })).join("");
+  const motion = state.motion || createMotionState();
+  els.fieldArea.innerHTML = sortedField.map((card) => {
+    const extra = card.id === motion.fieldCardId ? `motion-field-drop motion-seat-${motion.seat}` : "";
+    return renderCardVisual(card, {
+      recommended: targetIds.has(card.id),
+      tooltip: fieldTooltip(card, state.field),
+      extraClass: extra
+    });
+  }).join("");
   els.fieldRead.textContent = summarizeField(state.field);
   if (els.stockPile) {
     els.stockPile.classList.toggle("is-drawing", !!state.motion?.stockPulse);
