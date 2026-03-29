@@ -849,8 +849,22 @@ function groupCapturedCards(cards) {
   });
 
   const junkRows = [];
-  for (let index = 0; index < junk.length; index += 5) {
-    junkRows.push(junk.slice(index, index + 5));
+  let currentRow = [];
+  let currentRowValue = 0;
+
+  junk.forEach((card) => {
+    currentRow.push(card);
+    currentRowValue += getJunkValue(card);
+
+    if (currentRowValue >= 5) {
+      junkRows.push(currentRow);
+      currentRow = [];
+      currentRowValue = 0;
+    }
+  });
+
+  if (currentRow.length) {
+    junkRows.push(currentRow);
   }
 
   return { bright, animal, ribbon, junkRows };
@@ -868,7 +882,7 @@ function renderCapturedLayout(cards, options = {}) {
   const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
-  const junkHtml = [...groups.junkRows].reverse().map((row) => `
+  const junkHtml = groups.junkRows.map((row) => `
     <div class="captured-junk-row">
       ${row.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("")}
     </div>
@@ -1622,42 +1636,47 @@ function drawAndResolve(state, playerIndex, turnContext = null, onDone = null) {
     turnContext.drawn = drawn;
     turnContext.drawMatchCount = 0;
   }
-  if (drawn.type === "joker") {
-    player.captured.push(drawn);
-    if (turnContext) {
-      turnContext.drawMatchCount = -1;
-      turnContext.drawCaptured = [];
-    }
-    queueMotion(state, { capturedIds: [drawn.id], seat: playerIndex, stockPulse: true }, finishDraw);
-    logEvent(state, `${player.name} 뒤집기`, `${drawn.label}를 뒤집어 피를 더 챙겼습니다.`);
-    return;
-  }
 
-  const matches = getMatches(drawn, state.field);
-  if (turnContext) {
-    turnContext.drawn = drawn;
-    turnContext.drawMatchCount = matches.length;
-  }
-  if (matches.length === 0) {
-    state.field.push(drawn);
-    queueMotion(state, { fieldCardId: drawn.id, seat: playerIndex, stockPulse: true }, finishDraw);
-    logEvent(state, `${player.name} 뒤집기`, `${drawn.label}는 바닥에 남았습니다.`);
-  } else if (matches.length === 1) {
-    removeCard(state.field, matches[0].id);
-    resolveCapture(player, drawn, [matches[0]]);
-    queueMotion(state, { capturedIds: [drawn.id, matches[0].id], seat: playerIndex, stockPulse: true }, finishDraw);
-    logEvent(state, `${player.name} 뒤집기`, `${drawn.label}로 ${matches[0].label}을 챙겼습니다.`);
-    queueFlexibleChoiceIfNeeded(state, playerIndex, [drawn, matches[0]]);
-    if (turnContext) turnContext.drawCaptured = [matches[0]];
-  } else {
-    const target = chooseBestCaptureTarget(state, player, drawn, matches);
-    removeCard(state.field, target.id);
-    resolveCapture(player, drawn, [target]);
-    queueMotion(state, { capturedIds: [drawn.id, target.id], seat: playerIndex, stockPulse: true }, finishDraw);
-    logEvent(state, `${player.name} 뒤집기`, `${drawn.label}로 ${target.label}을 골라 가져갔습니다.`);
-    queueFlexibleChoiceIfNeeded(state, playerIndex, [drawn, target]);
-    if (turnContext) turnContext.drawCaptured = [target];
-  }
+  const resolveRevealedDraw = () => {
+    if (drawn.type === "joker") {
+      player.captured.push(drawn);
+      if (turnContext) {
+        turnContext.drawMatchCount = -1;
+        turnContext.drawCaptured = [];
+      }
+      queueMotion(state, { capturedIds: [drawn.id], seat: playerIndex, stockPulse: true }, finishDraw);
+      logEvent(state, player.name + " 뒤집기", drawn.label + "를 뒤집어 피를 더 챙겼습니다.");
+      return;
+    }
+
+    const matches = getMatches(drawn, state.field);
+    if (turnContext) {
+      turnContext.drawn = drawn;
+      turnContext.drawMatchCount = matches.length;
+    }
+    if (matches.length === 0) {
+      state.field.push(drawn);
+      queueMotion(state, { fieldCardId: drawn.id, seat: playerIndex, stockPulse: true }, finishDraw);
+      logEvent(state, player.name + " 뒤집기", drawn.label + "는 바닥에 남았습니다.");
+    } else if (matches.length === 1) {
+      removeCard(state.field, matches[0].id);
+      resolveCapture(player, drawn, [matches[0]]);
+      queueMotion(state, { capturedIds: [drawn.id, matches[0].id], seat: playerIndex, stockPulse: true }, finishDraw);
+      logEvent(state, player.name + " 뒤집기", drawn.label + "로 " + matches[0].label + "을 챙겼습니다.");
+      queueFlexibleChoiceIfNeeded(state, playerIndex, [drawn, matches[0]]);
+      if (turnContext) turnContext.drawCaptured = [matches[0]];
+    } else {
+      const target = chooseBestCaptureTarget(state, player, drawn, matches);
+      removeCard(state.field, target.id);
+      resolveCapture(player, drawn, [target]);
+      queueMotion(state, { capturedIds: [drawn.id, target.id], seat: playerIndex, stockPulse: true }, finishDraw);
+      logEvent(state, player.name + " 뒤집기", drawn.label + "로 " + target.label + "을 골라 가져갔습니다.");
+      queueFlexibleChoiceIfNeeded(state, playerIndex, [drawn, target]);
+      if (turnContext) turnContext.drawCaptured = [target];
+    }
+  };
+
+  queueMotion(state, { revealedCard: drawn, seat: playerIndex, stockPulse: true }, resolveRevealedDraw);
 }
 
 function finishTurn(state, playerIndex) {
@@ -2223,6 +2242,13 @@ function renderField(state) {
   els.fieldRead.textContent = summarizeField(state.field);
   if (els.stockPile) {
     els.stockPile.classList.toggle("is-drawing", !!state.motion?.stockPulse);
+    if (motion.revealedCard) {
+      els.stockPile.innerHTML = renderCardVisual(motion.revealedCard, { small: true, extraClass: "stock-reveal motion-seat-" + motion.seat });
+      els.stockPile.classList.add("has-reveal");
+    } else {
+      els.stockPile.innerHTML = "";
+      els.stockPile.classList.remove("has-reveal");
+    }
   }
 }
 

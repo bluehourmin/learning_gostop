@@ -41,8 +41,8 @@ button {
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  align-items: flex-end;
-  padding: 26px 30px;
+  align-items: center;
+  padding: 16px 22px;
   border-radius: 28px;
   background:
     radial-gradient(circle at top right, rgba(255, 230, 187, 0.16), transparent 24%),
@@ -51,32 +51,45 @@ button {
   box-shadow: var(--shadow);
 }
 
-.eyebrow {
-  margin: 0 0 8px;
-  color: rgba(255, 239, 214, 0.8);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.compact-hero {
+  min-height: 88px;
+}
+
+.hero-brand {
+  display: grid;
+  gap: 8px;
 }
 
 .hero h1 {
   margin: 0;
   font-family: "Black Han Sans", sans-serif;
-  font-size: clamp(38px, 5vw, 64px);
-  line-height: 0.95;
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 0.98;
 }
 
-.hero-copy {
-  max-width: 720px;
-  margin: 14px 0 0;
-  line-height: 1.65;
-  color: rgba(255, 245, 230, 0.88);
+.hero-meta-line {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 247, 230, 0.1);
+  border: 1px solid rgba(255, 236, 209, 0.12);
+  color: rgba(255, 244, 229, 0.88);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .hero-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .primary,
@@ -85,7 +98,7 @@ button {
 .match-choice-btn {
   border: 0;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 10px 16px;
   font-weight: 800;
   transition: transform 160ms ease, opacity 160ms ease;
 }
@@ -298,6 +311,30 @@ button {
   height: 92px;
 }
 
+.stock-pile.has-reveal {
+  overflow: visible;
+}
+
+.stock-pile .card-shell.small.stock-reveal {
+  position: absolute;
+  left: -6px;
+  top: -106px;
+  z-index: 4;
+  filter: drop-shadow(0 10px 18px rgba(30, 12, 8, 0.28));
+}
+
+.stock-pile .card-shell.small.stock-reveal.motion-seat-0 {
+  animation: fieldDropFromBottom 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stock-pile .card-shell.small.stock-reveal.motion-seat-1 {
+  animation: fieldDropFromLeft 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stock-pile .card-shell.small.stock-reveal.motion-seat-2 {
+  animation: fieldDropFromRight 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .stock-pile::before,
 .stock-pile::after,
 .stock-pile span {
@@ -487,10 +524,10 @@ button {
 
 .captured-junk {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 10px;
-  justify-content: flex-end;
-  min-height: 182px;
+  justify-content: flex-start;
+  min-height: 196px;
 }
 
 .captured-junk-row .card-shell.small,
@@ -1006,6 +1043,17 @@ button {
 }
 
 @media (max-width: 720px) {
+  .hero {
+    gap: 12px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .app-shell {
     width: min(100vw - 14px, 100%);
     margin: 8px auto 20px;
