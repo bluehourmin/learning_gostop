@@ -42,22 +42,6 @@
     </header>
     <main class="layout">
       <section class="table-panel">
-        <div class="table-topbar">
-          <span id="turn-badge" class="badge">내 차례</span>
-          <span id="deck-count" class="badge subtle"></span>
-        </div>
-        <div class="table-meta">
-          <span id="dealer-badge" class="badge subtle"></span>
-          <span id="direction-badge" class="badge subtle"></span>
-        </div>
-        <div class="pace-bar">
-          <div class="pace-buttons">
-            <button id="pace-slow-btn" class="pace-btn active">천천히</button>
-            <button id="pace-normal-btn" class="pace-btn">보통</button>
-            <button id="pace-step-btn" class="pace-btn">한 턴씩</button>
-          </div>
-          <button id="next-turn-btn" class="pace-btn next-btn" disabled>다음 턴 보기</button>
-        </div>
         <div class="table-board">
           <aside id="left-seat" class="seat side-seat"></aside>
           <section class="field-zone">
@@ -76,6 +60,27 @@
         </div>
       </section>
       <section class="sidebar">
+        <section class="panel status-panel">
+          <div class="panel-heading">
+            <h2>상태</h2>
+          </div>
+          <div class="table-topbar sidebar-topbar">
+            <span id="turn-badge" class="badge">내 차례</span>
+            <span id="deck-count" class="badge subtle"></span>
+          </div>
+          <div class="table-meta sidebar-meta">
+            <span id="dealer-badge" class="badge subtle"></span>
+            <span id="direction-badge" class="badge subtle"></span>
+          </div>
+          <div class="pace-bar sidebar-pace-bar">
+            <div class="pace-buttons sidebar-pace-buttons">
+              <button id="pace-slow-btn" class="pace-btn active">천천히</button>
+              <button id="pace-normal-btn" class="pace-btn">보통</button>
+              <button id="pace-step-btn" class="pace-btn">한 턴씩</button>
+            </div>
+            <button id="next-turn-btn" class="pace-btn next-btn" disabled>다음 턴 보기</button>
+          </div>
+        </section>
         <section class="panel tutor-panel">
           <div class="panel-heading">
             <h2>튜터</h2>
@@ -153,6 +158,20 @@
       </div>
       <p class="reference-guide">월별 4장을 빠르게 훑으면서 광, 단줄, 고도리, 겸용 여부만 먼저 익혀보세요.</p>
       <div id="reference-grid" class="reference-grid"></div>
+    </section>
+  </div>
+  <div id="viewport-overlay" class="viewport-overlay" hidden>
+    <div class="viewport-overlay__backdrop"></div>
+    <section class="viewport-overlay__panel" role="dialog" aria-modal="true" aria-labelledby="viewport-title">
+      <p id="viewport-kicker" class="viewport-overlay__kicker">모바일 안내</p>
+      <h2 id="viewport-title">가로로 돌려주세요</h2>
+      <p id="viewport-message" class="viewport-overlay__message"></p>
+      <div id="viewport-device-tags" class="viewport-overlay__tags"></div>
+      <div class="viewport-overlay__actions">
+        <button id="viewport-refresh-btn" class="primary" type="button">다시 확인</button>
+        <button id="viewport-continue-btn" class="ghost" type="button" hidden>세로로 계속 보기</button>
+        <button id="viewport-reference-btn" class="ghost" type="button">전체 패 보기</button>
+      </div>
     </section>
   </div>
   <script src="./script.js"></script>

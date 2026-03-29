@@ -75,8 +75,8 @@ const CARD_LIBRARY = [
   { month: 12, type: "junk", label: "12월 쌍피", sprite: [3, 9] },
   { month: 12, type: "junk", label: "12월 피1", sprite: [3, 10] },
   { month: 12, type: "junk", label: "12월 피2", sprite: [3, 11] },
-  { month: 0, type: "joker", label: "조커 +2피", badge: "+2" },
-  { month: 0, type: "joker", label: "조커 +3피", badge: "+3" }
+  { month: 0, type: "joker", label: "조커", badge: "조커" },
+  { month: 0, type: "joker", label: "조커", badge: "조커" }
 ];
 
 const PLAYER_NAMES = ["나", "상대 A", "상대 B"];
@@ -94,7 +94,14 @@ const app = {
   afterMotionCallback: null,
   aiWatchdog: null,
   dealerIndex: null,
-  gameToken: 0
+  gameToken: 0,
+  viewportGuidanceDismissed: false,
+  viewport: {
+    deviceType: "desktop",
+    orientation: "landscape",
+    blocked: false,
+    warned: false
+  }
 };
 
 const els = {
@@ -130,7 +137,15 @@ const els = {
   chatInput: document.getElementById("chat-input"),
   referenceOpenBtn: document.getElementById("reference-open-btn"),
   referenceModal: document.getElementById("reference-modal"),
-  referenceGrid: document.getElementById("reference-grid")
+  referenceGrid: document.getElementById("reference-grid"),
+  viewportOverlay: document.getElementById("viewport-overlay"),
+  viewportKicker: document.getElementById("viewport-kicker"),
+  viewportTitle: document.getElementById("viewport-title"),
+  viewportMessage: document.getElementById("viewport-message"),
+  viewportDeviceTags: document.getElementById("viewport-device-tags"),
+  viewportRefreshBtn: document.getElementById("viewport-refresh-btn"),
+  viewportContinueBtn: document.getElementById("viewport-continue-btn"),
+  viewportReferenceBtn: document.getElementById("viewport-reference-btn")
 };
 
 const PACE_DELAY = {
@@ -255,6 +270,7 @@ function createGame() {
     tutor: null,
     logs: [],
     winner: null,
+    isDraw: false,
     endReason: null,
     motion: createMotionState(),
     chatHistory: [{ role: "assistant", text: "지금 판 기준으로 같이 보겠습니다. 헷갈리는 패나 고/스톱, 상대 흐름을 물어보세요." }],
@@ -425,7 +441,7 @@ function getEffectiveType(card) {
 
 function getJunkValue(card) {
   if (card.type === "joker") {
-    return card.label.includes("+3") ? 3 : 2;
+    return 1;
   }
   if (card.junkValue) return card.junkValue;
   if (card.type === "junk" && card.label.includes("쌍피")) return 2;
@@ -747,8 +763,8 @@ function chooseBestCaptureTarget(state, player, playedCard, matches) {
     const rightSimulated = [...player.captured, playedCard, right];
     let leftValue = estimateCardValue(left) + (evaluateScore(leftSimulated).score - currentScore) * 8 + comboProgressValue(leftSimulated) + evaluateCaptureDenial(state, player, [left]);
     let rightValue = estimateCardValue(right) + (evaluateScore(rightSimulated).score - currentScore) * 8 + comboProgressValue(rightSimulated) + evaluateCaptureDenial(state, player, [right]);
-    if (getJunkValue(left) >= 2) leftValue += 8;
-    if (getJunkValue(right) >= 2) rightValue += 8;
+    if (getJunkValue(left) >= 2) leftValue += 24;
+    if (getJunkValue(right) >= 2) rightValue += 24;
     return rightValue - leftValue;
   })[0];
 }
@@ -848,26 +864,37 @@ function groupCapturedCards(cards) {
     }
   });
 
-  const junkRows = [];
-  let currentRow = [];
-  let currentRowValue = 0;
-
-  junk.forEach((card) => {
-    currentRow.push(card);
-    currentRowValue += getJunkValue(card);
-
-    if (currentRowValue >= 5) {
-      junkRows.push(currentRow);
-      currentRow = [];
-      currentRowValue = 0;
-    }
+  const sortedJunk = [...junk].sort((a, b) => {
+    const valueDiff = getJunkValue(b) - getJunkValue(a);
+    if (valueDiff !== 0) return valueDiff;
+    const monthDiff = a.month - b.month;
+    if (monthDiff !== 0) return monthDiff;
+    return a.label.localeCompare(b.label, 'ko');
   });
 
-  if (currentRow.length) {
-    junkRows.push(currentRow);
-  }
+  const junkRows = [];
+  sortedJunk.forEach((card) => {
+    const value = getJunkValue(card);
+    let targetRow = null;
+    for (const row of junkRows) {
+      const remaining = 5 - row.value;
+      if (remaining >= value) {
+        if (!targetRow || remaining < (5 - targetRow.value)) {
+          targetRow = row;
+        }
+      }
+    }
+    if (!targetRow) {
+      targetRow = { cards: [], value: 0 };
+      junkRows.push(targetRow);
+    }
+    targetRow.cards.push(card);
+    targetRow.value += value;
+  });
 
-  return { bright, animal, ribbon, junkRows };
+  junkRows.sort((a, b) => a.value - b.value || a.cards.length - b.cards.length);
+
+  return { bright, animal, ribbon, junkRows: junkRows.map((row) => row.cards) };
 }
 
 function renderCapturedLayout(cards, options = {}) {
@@ -882,11 +909,15 @@ function renderCapturedLayout(cards, options = {}) {
   const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
-  const junkHtml = groups.junkRows.map((row) => `
+  const junkHtml = groups.junkRows.map((row) => {
+    const rowValue = row.reduce((sum, card) => sum + getJunkValue(card), 0);
+    return `
     <div class="captured-junk-row">
-      ${row.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("")}
+      <span class="captured-junk-value">피 ${rowValue}</span>
+      ${row.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) + (getJunkValue(card) >= 2 ? " junk-double" : "") })).join("")}
     </div>
-  `).join("");
+  `;
+  }).join("");
   const brightClass = `captured-bright${brightHtml ? "" : " is-empty"}`;
   const ribbonClass = `captured-ribbon${ribbonHtml ? "" : " is-empty"}`;
   const animalClass = `captured-animal${animalHtml ? "" : " is-empty"}`;
@@ -1255,6 +1286,9 @@ function summarizePlayerResult(player) {
 }
 
 function buildPayoutSummary(state, winner) {
+  if (!winner) {
+    return { base: 0, total: 0, detail: "정산 없음", reasons: "무득점 패 소진이라 승부를 가르지 않았습니다.", wonByJunk: false, losers: [], settlementScore: 0 };
+  }
   const winnerEval = evaluatePlayerScoreBreakdown(winner);
   const settlementScore = Math.max(RULE_CONFIG.stopThreshold || 3, winner.score || 0);
   const base = settlementScore * MONEY_PER_POINT;
@@ -1439,11 +1473,22 @@ function buildWinReason(winner, runnerUp) {
 
 function buildEndGameTutor(state) {
   const ordered = [...state.players].sort((a, b) => b.score - a.score);
-  const winner = state.winner != null ? state.players[state.winner] : ordered[0];
-  const runnerUp = ordered.find((player) => player.seat !== winner.seat) || winner;
+  const winner = state.isDraw ? null : (state.winner != null ? state.players[state.winner] : ordered[0]);
+  const runnerUp = winner ? (ordered.find((player) => player.seat !== winner.seat) || winner) : ordered[1] || ordered[0];
   const scoreboard = buildScoreboardHtml(state);
   const payout = buildPayoutSummary(state, winner);
   const endingLabel = state.endReason === "stop" ? "스톱 종료" : state.endReason === "deck" ? "패 소진 종료" : "판 종료";
+  if (state.isDraw) {
+    return {
+      summary: "<strong>" + endingLabel + "</strong> 무승부",
+      flow: '<strong>수령액</strong> 정산 없음'
+        + '<br><span>전원이 0점이라 패 소진으로 판만 끝났습니다.</span>'
+        + '<div class="scoreboard-lines">' + scoreboard + '</div>',
+      risk: "<strong>승부 포인트</strong> 점수가 난 사람이 없어 승부를 가르지 못했습니다.",
+      skill: "<strong>점수 근거</strong> 세 사람 모두 점수 없음입니다.",
+      recommendations: []
+    };
+  }
   const tiedTop = runnerUp && runnerUp !== winner && runnerUp.score === winner.score;
   const reason = state.endReason === "stop" && tiedTop
     ? "동점이었지만 스톱을 선언한 " + winner.name + "가 승리를 확정했습니다."
@@ -1788,13 +1833,27 @@ function endGame(state, winnerIndex = null, endReason = null) {
     player.score = evaluatePlayerScore(player).score;
   });
   const ordered = [...state.players].sort((a, b) => b.score - a.score);
-  state.winner = winnerIndex == null ? ordered[0].seat : winnerIndex;
   state.endReason = endReason || state.endReason || "deck";
-  app.dealerIndex = state.winner;
+  state.isDraw = false;
+  if (winnerIndex != null) {
+    state.winner = winnerIndex;
+  } else if (ordered[0].score <= 0) {
+    state.winner = null;
+    state.isDraw = true;
+  } else {
+    state.winner = ordered[0].seat;
+  }
+  if (!state.isDraw) {
+    app.dealerIndex = state.winner;
+  }
   const orderedSummary = ordered.map((player) => `${player.name} ${player.score}점`).join(", ");
-  const payout = buildPayoutSummary(state, state.players[state.winner]);
   const endingLabel = state.endReason === "stop" ? "스톱 종료" : state.endReason === "deck" ? "패 소진 종료" : "판 종료";
-  logEvent(state, endingLabel, `${state.players[state.winner].name} 승리. 승리 점수 ${state.players[state.winner].score}점, 정산 기준 ${payout.settlementScore}점으로 ${payout.detail} 총 ${payout.total.toLocaleString("ko-KR")}원을 받습니다. 최종 점수는 ${orderedSummary}입니다.`);
+  if (state.isDraw) {
+    logEvent(state, endingLabel, `무승부. 패가 소진됐지만 전원이 0점이라 승부를 가르지 않았습니다. 최종 점수는 ${orderedSummary}입니다.`);
+  } else {
+    const payout = buildPayoutSummary(state, state.players[state.winner]);
+    logEvent(state, endingLabel, `${state.players[state.winner].name} 승리. 승리 점수 ${state.players[state.winner].score}점, 정산 기준 ${payout.settlementScore}점으로 ${payout.detail} 총 ${payout.total.toLocaleString("ko-KR")}원을 받습니다. 최종 점수는 ${orderedSummary}입니다.`);
+  }
   assessTutor(state);
   render();
 }
@@ -1980,6 +2039,65 @@ function closeReferenceModal() {
   document.body.classList.remove('reference-open');
 }
 
+function detectDeviceType() {
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  const shortSide = Math.min(window.innerWidth, window.innerHeight);
+  if (!coarsePointer) return 'desktop';
+  if (shortSide < 760) return 'mobile';
+  if (shortSide < 1180) return 'tablet';
+  return 'desktop';
+}
+
+function getViewportState() {
+  const deviceType = detectDeviceType();
+  const orientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+  const blocked = deviceType === 'mobile' && orientation === 'portrait';
+  const warned = !blocked && deviceType === 'tablet' && orientation === 'portrait' && !app.viewportGuidanceDismissed;
+  return { deviceType, orientation, blocked, warned };
+}
+
+function renderViewportGuidance() {
+  if (!els.viewportOverlay) return;
+  const viewport = getViewportState();
+  app.viewport = viewport;
+
+  document.body.classList.toggle('viewport-blocked', viewport.blocked);
+  document.body.classList.toggle('viewport-warned', viewport.warned);
+  document.body.classList.toggle('device-mobile', viewport.deviceType === 'mobile');
+  document.body.classList.toggle('device-tablet', viewport.deviceType === 'tablet');
+  document.body.classList.toggle('device-desktop', viewport.deviceType === 'desktop');
+  document.body.classList.toggle('orientation-portrait', viewport.orientation === 'portrait');
+  document.body.classList.toggle('orientation-landscape', viewport.orientation === 'landscape');
+
+  if (!viewport.blocked && !viewport.warned) {
+    els.viewportOverlay.hidden = true;
+    return;
+  }
+
+  const isMobile = viewport.deviceType === 'mobile';
+  els.viewportOverlay.hidden = false;
+  els.viewportKicker.textContent = isMobile ? '모바일 안내' : '태블릿 안내';
+  els.viewportTitle.textContent = isMobile ? '가로로 돌려주세요' : '태블릿은 가로가 더 편합니다';
+  els.viewportMessage.textContent = isMobile
+    ? '모바일은 가로 화면에서만 플레이할 수 있어요. 화면을 돌리면 메인보드와 튜터를 함께 읽기 쉬워집니다.'
+    : '태블릿은 가로 화면에서 판 흐름과 먹은 패를 훨씬 읽기 쉽습니다. 세로로도 볼 수 있지만 전략 읽기가 답답할 수 있어요.';
+  els.viewportDeviceTags.innerHTML = [
+    `<span class="viewport-tag">${isMobile ? '모바일' : '태블릿'}</span>`,
+    `<span class="viewport-tag">${viewport.orientation === 'portrait' ? '세로 감지' : '가로 감지'}</span>`,
+    `<span class="viewport-tag">${isMobile ? '가로 필수' : '가로 권장'}</span>`
+  ].join('');
+  els.viewportContinueBtn.hidden = isMobile;
+}
+
+function updateViewportGuidance(resetDismissed = false) {
+  const prevOrientation = app.viewport?.orientation;
+  const nextOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+  if (resetDismissed || nextOrientation === 'landscape' || prevOrientation !== nextOrientation) {
+    app.viewportGuidanceDismissed = false;
+  }
+  renderViewportGuidance();
+}
+
 function renderCardVisual(card, options = {}) {
   const recommendationClass = options.recommended ? " recommended" : "";
   const playableClass = options.playable ? " playable" : "";
@@ -2132,11 +2250,15 @@ function renderSeat(player, options = {}) {
 
   const capturedLayout = renderCapturedLayout(player.captured, { compact: player.seat !== USER_INDEX, seat: player.seat });
   const publicZoneClass = player.seat === 1 ? "public-zone left-public" : player.seat === 2 ? "public-zone right-public" : "public-zone";
+  const goBadge = player.goCount > 0 ? `<span class="seat-go-badge">고 ${player.goCount}</span>` : "";
   const seatBody = `
     <div class="seat-header">
       <div>
-        <div class="seat-name">${player.name}${player.seat === app.dealerIndex ? " · 선" : ""}</div>
-        <div class="seat-score" title="${formatPlayerScoreBreakdown(player)}">${evaluated.score}점 · 광 ${evaluated.totals.bright} · 열 ${evaluated.totals.animal} · 띠 ${evaluated.totals.ribbon} · 피 ${evaluated.totals.junk}</div>
+        <div class="seat-name-row">
+          <div class="seat-name">${player.name}${player.seat === app.dealerIndex ? " · 선" : ""}</div>
+          ${goBadge}
+        </div>
+        <div class="seat-score" title="${formatPlayerScoreBreakdown(player)}">${evaluated.score}점${player.goCount > 0 ? ` · 고 ${player.goCount}` : ""} · 광 ${evaluated.totals.bright} · 열 ${evaluated.totals.animal} · 띠 ${evaluated.totals.ribbon} · 피 ${evaluated.totals.junk}</div>
       </div>
       ${player.seat === USER_INDEX ? `<span class="badge subtle hand-count-badge">${player.hand.length}장</span>` : ""}
     </div>
@@ -2148,6 +2270,7 @@ function renderSeat(player, options = {}) {
   return { seatClass, seatBody };
 }
 function seatComment(player) {
+  if (app.state.isDraw) return "이번 판은 무승부입니다.";
   if (app.state.winner != null && app.state.winner === player.seat) return "이번 판 승자입니다.";
   if (player.seat === USER_INDEX) return "가장 좋은 패를 눌러도 되고, 일부러 다른 수를 내며 감각을 비교해봐도 됩니다.";
   if (player.captured.length >= 5) return "먹은 패 흐름이 올라오고 있습니다. 다음 점수 연결을 조심해야 합니다.";
@@ -2177,6 +2300,9 @@ function buildCoachChatReply(state, question) {
     .sort((a, b) => b.threat - a.threat);
   const rival = rivals[0];
 
+  if (state.isDraw) {
+    return `끝난 판 기준으로 보면 <strong>무승부</strong>입니다. 세 사람 모두 점수 근거는 점수 없음입니다.`;
+  }
   if (state.winner != null) {
     return `끝난 판 기준으로 보면 <strong>${state.players[state.winner].name}</strong>이 앞섰고, 점수 근거는 ${formatPlayerScoreBreakdown(state.players[state.winner])}입니다.`;
   }
@@ -2702,7 +2828,7 @@ function render() {
     endGame(state);
     return;
   }
-  els.turnBadge.textContent = state.winner != null ? `${state.players[state.winner].name} 승리` : `${state.players[state.currentPlayer].name} 차례`;
+  els.turnBadge.textContent = state.isDraw ? `무승부` : state.winner != null ? `${state.players[state.winner].name} 승리` : `${state.players[state.currentPlayer].name} 차례`;
   els.deckCount.textContent = `남은 패 ${state.deck.length}장`;
   els.dealerBadge.textContent = `선: ${state.players[app.dealerIndex].name}`;
   els.directionBadge.textContent = "턴 방향: 시계 방향 · 나 → 상대 A → 상대 B";
@@ -2715,6 +2841,7 @@ function render() {
   renderPendingChoice(state);
   renderPaceControls();
   syncOptionButtons();
+  renderViewportGuidance();
   ensureAiTurnProgress();
 }
 
@@ -2770,6 +2897,23 @@ if (els.chatForm) {
     submitChatQuestion();
   });
 }
+if (els.viewportRefreshBtn) {
+  els.viewportRefreshBtn.addEventListener("click", () => updateViewportGuidance(true));
+}
+if (els.viewportContinueBtn) {
+  els.viewportContinueBtn.addEventListener("click", () => {
+    app.viewportGuidanceDismissed = true;
+    renderViewportGuidance();
+  });
+}
+if (els.viewportReferenceBtn) {
+  els.viewportReferenceBtn.addEventListener("click", openReferenceModal);
+}
+window.addEventListener("resize", () => updateViewportGuidance());
+window.addEventListener("orientationchange", () => {
+  window.setTimeout(() => updateViewportGuidance(), 80);
+});
 
 startAiWatchdog();
+updateViewportGuidance(true);
 startNewGame();

@@ -192,6 +192,39 @@ button {
   padding: 20px;
 }
 
+.status-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.sidebar-topbar {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.sidebar-meta {
+  margin-top: 0;
+}
+
+.sidebar-pace-bar {
+  margin-top: 0;
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.sidebar-pace-buttons {
+  width: 100%;
+}
+
+.sidebar-pace-buttons .pace-btn,
+.status-panel .next-btn {
+  flex: 1 1 auto;
+}
+
+.status-panel .next-btn {
+  width: 100%;
+}
+
 .panel-heading h2,
 .field-header h2 {
   margin: 0;
@@ -380,6 +413,27 @@ button {
   font-weight: 800;
 }
 
+.seat-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seat-go-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff1da, #ecc894);
+  color: #5d1c12;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(44, 20, 8, 0.15);
+}
+
 .seat-score {
   font-size: 12px;
   color: rgba(255, 245, 232, 0.84);
@@ -520,6 +574,18 @@ button {
   gap: 0;
   align-items: center;
   min-height: 54px;
+  position: relative;
+  padding-top: 18px;
+}
+
+.captured-junk-value {
+  position: absolute;
+  left: 0;
+  top: -2px;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255, 244, 226, 0.88);
+  letter-spacing: -0.02em;
 }
 
 .captured-junk {
@@ -549,6 +615,21 @@ button {
 .captured-animal .card-shell.small,
 .captured-junk-row .card-shell.small {
   flex: 0 0 auto;
+}
+
+.card-shell.junk-double::after {
+  content: "쌍피";
+  position: absolute;
+  right: -4px;
+  bottom: -6px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(91, 28, 18, 0.9);
+  color: #fff7ed;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(19, 10, 5, 0.16);
 }
 
 .captured-empty {
@@ -1904,5 +1985,151 @@ button {
 
   .reference-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+
+body.viewport-blocked .app-shell {
+  pointer-events: none;
+  user-select: none;
+  filter: blur(2px) saturate(0.92);
+}
+
+.viewport-overlay[hidden] {
+  display: none;
+}
+
+.viewport-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.viewport-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 18, 18, 0.48);
+  backdrop-filter: blur(8px);
+}
+
+.viewport-overlay__panel {
+  position: relative;
+  width: min(560px, calc(100vw - 32px));
+  display: grid;
+  gap: 12px;
+  padding: 22px 22px 20px;
+  border-radius: 24px;
+  background: rgba(255, 247, 236, 0.96);
+  border: 1px solid rgba(85, 49, 25, 0.1);
+  box-shadow: 0 22px 56px rgba(28, 14, 7, 0.24);
+}
+
+.viewport-overlay__kicker {
+  margin: 0;
+  color: #9f3426;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.viewport-overlay__panel h2 {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.05;
+}
+
+.viewport-overlay__message {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.viewport-overlay__tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewport-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(214, 155, 42, 0.14);
+  color: #7e4e04;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.viewport-overlay__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+body.viewport-warned .viewport-overlay__panel {
+  width: min(520px, calc(100vw - 42px));
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-width: 1180px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .table-panel {
+    padding: 14px;
+  }
+
+  .sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .status-panel,
+  .tutor-panel {
+    grid-column: 1 / -1;
+  }
+
+  .chat-panel,
+  .log-panel,
+  .rules-panel {
+    grid-column: span 1;
+  }
+
+  .table-board {
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
+    grid-template-rows: minmax(320px, 1fr) auto;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .field-area {
+    min-height: 270px;
+    gap: 10px;
+  }
+
+  .seat {
+    padding: 10px;
+  }
+
+  .user-seat {
+    padding-top: 10px;
+  }
+
+  .card-shell {
+    width: 72px;
+  }
+
+  .card-shell.small {
+    width: 56px;
+  }
+}
+
+@media (pointer: coarse) and (orientation: portrait) {
+  .viewport-overlay__panel {
+    width: min(92vw, 520px);
   }
 }
