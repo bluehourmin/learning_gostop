@@ -1,0 +1,111 @@
+[
+  {
+    "id": "joker_counts_as_one_junk",
+    "category": "rules",
+    "severity": "high",
+    "description": "조커는 피 1장 가치로 계산되어야 한다.",
+    "docPatterns": [
+      "조커는 피 정리와 점수 계산에서 일반 피 1장 가치로 본다"
+    ],
+    "codePatterns": [
+      "function getJunkValue(card) {",
+      "if (card.type === \"joker\") {",
+      "return 1;"
+    ]
+  },
+  {
+    "id": "stop_threshold_is_three",
+    "category": "rules",
+    "severity": "high",
+    "description": "고/스톱은 기본 3점부터 가능해야 한다.",
+    "docPatterns": [
+      "고/스톱 선언은 기본 3점부터 가능하다"
+    ],
+    "codePatterns": [
+      "stopThreshold: 3"
+    ]
+  },
+  {
+    "id": "opponent_rotation_rule_documented",
+    "category": "ui",
+    "severity": "medium",
+    "description": "상대 A/B 방향감 규칙이 문서화되어 있어야 한다.",
+    "docPatterns": [
+      "상대 공개패는 A 시계 90도, B 반시계 90도로 보이게 한다"
+    ],
+    "codePatterns": [
+      "opponent-rot-cw",
+      "opponent-rot-ccw"
+    ]
+  },
+  {
+    "id": "junk_rows_use_value_not_count",
+    "category": "ui",
+    "severity": "high",
+    "description": "피 줄은 카드 장수가 아니라 피 값 합으로 5씩 끊어야 한다.",
+    "docPatterns": [
+      "피는 아래줄부터 5장씩 쌓아 위로 올라가게 정리한다"
+    ],
+    "codePatterns": [
+      "const value = getJunkValue(card);",
+      "const remaining = 5 - row.value;",
+      "targetRow.value += value;"
+    ]
+  },
+  {
+    "id": "show_opponent_go_count",
+    "category": "tutor",
+    "severity": "medium",
+    "description": "상대의 고 횟수가 보드나 튜터에서 드러나야 한다.",
+    "docPatterns": [
+      "상대도 판세가 유리하면 `고`를 여러 번 이어갈 수 있고, 그 상태를 튜터와 위험 경고에서 알려준다"
+    ],
+    "codePatterns": [
+      "seat-go-badge",
+      "고 ${player.goCount}",
+      "warnings.push({ severity: 2, text: \"<strong>\" + player.name + \"</strong> 고 \" + player.goCount + \"번 진행 중\" });"
+    ]
+  },
+  {
+    "id": "turn_freeze_guards_exist",
+    "category": "turn-flow",
+    "severity": "high",
+    "description": "턴 멈춤을 막는 보호막이 코드에 존재해야 한다.",
+    "docPatterns": [
+      "내 턴 뒤 상대 A/B 차례가 안 넘어가고 멈춤"
+    ],
+    "codePatterns": [
+      "gameToken",
+      "ensureAiTurnProgress",
+      "startAiWatchdog",
+      "settleMotion"
+    ]
+  },
+  {
+    "id": "viewport_guidance_exists",
+    "category": "ui",
+    "severity": "low",
+    "description": "모바일 세로 차단/태블릿 안내 UI가 존재해야 한다.",
+    "docPatterns": [
+      "모바일은 가로",
+      "태블릿은 가로"
+    ],
+    "codePatterns": [
+      "renderViewportGuidance",
+      "viewportOverlay"
+    ]
+  },
+  {
+    "id": "reference_guide_exists",
+    "category": "learning",
+    "severity": "medium",
+    "description": "전체 패 참고표 기능이 존재해야 한다.",
+    "docPatterns": [
+      "전체 패 참고표"
+    ],
+    "codePatterns": [
+      "renderReferenceGuide",
+      "referenceOpenBtn"
+    ]
+  }
+]

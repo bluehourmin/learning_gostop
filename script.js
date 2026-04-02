@@ -1142,6 +1142,59 @@ function inferSkillLine(state, user, recommendations) {
   return "지금은 큰 기술보다 손해를 줄이는 국면입니다. 상대가 좋아할 월을 바닥에 늘리지 않는 쪽이 중요합니다.";
 }
 
+function buildExactScoreReason(player) {
+  const breakdown = evaluatePlayerScoreBreakdown(player);
+  if (!breakdown.parts.length) return '점수 없음';
+  return breakdown.parts.map((part) => `${part.label} ${part.score}점`).join(' + ');
+}
+
+function buildSelfChecklist(state, player) {
+  const lines = [];
+  const scoreReason = buildExactScoreReason(player);
+  lines.push(`<strong>현재 점수</strong> ${scoreReason}`);
+  const combos = analyzeComboProgress(state, player);
+  combos.forEach((combo) => {
+    if (combo.count >= 2 && !combo.brokenBy) {
+      lines.push(`<strong>${combo.name}</strong> ${combo.count}장 진행 · ${combo.missing[0]}월 남음`);
+    } else if (combo.count >= 1 && combo.brokenBy) {
+      lines.push(`<strong>${combo.name}</strong> 깨짐 · ${combo.brokenBy.name}가 필요한 월 보유`);
+    }
+  });
+  const bright = evaluateScoreBreakdown(player.captured).totals.bright;
+  if (bright >= 2) {
+    lines.push(`<strong>광</strong> ${bright}장`);
+  }
+  if (lines.length === 1) {
+    lines.push('눈에 띄는 완성 직전 줄은 아직 없습니다.');
+  }
+  return lines.slice(0, 4).join('<br>');
+}
+
+function buildOpponentChecklist(state, rivals) {
+  const lines = [];
+  rivals.forEach((item) => {
+    const player = item.player;
+    const combos = analyzeComboProgress(state, player);
+    const active = combos.filter((combo) => combo.count >= 2 && !combo.brokenBy);
+    const broken = combos.filter((combo) => combo.count >= 1 && combo.brokenBy);
+    if (player.goCount > 0) {
+      lines.push(`<strong>${player.name}</strong> 고 ${player.goCount}번`);
+    }
+    const bright = evaluateScoreBreakdown(player.captured).totals.bright;
+    if (bright >= 2) {
+      lines.push(`<strong>${player.name}</strong> 광 ${bright}장`);
+    }
+    active.slice(0, 2).forEach((combo) => {
+      lines.push(`<strong>${player.name}</strong> ${combo.name} ${combo.count}장 진행`);
+    });
+    broken.slice(0, 1).forEach((combo) => {
+      lines.push(`<strong>${player.name}</strong> ${combo.name} 깨짐`);
+    });
+  });
+  if (!lines.length) return '상대 쪽에서 눈에 띄는 완성 직전 줄은 아직 없습니다.';
+  return lines.slice(0, 5).join('<br>');
+}
+
 function buildRecommendationRanks(recommendations) {
   const ranks = new Map();
   let currentRank = 0;
@@ -1457,18 +1510,12 @@ function buildOpponentPressureLine(state, rivals) {
 }
 
 function buildWinReason(winner, runnerUp) {
-  const winnerEval = evaluatePlayerScore(winner);
-  const runnerEval = evaluatePlayerScore(runnerUp);
-  const winnerCombos = findCompletedNamedCombos(winner.captured);
-  const reasons = [];
-
-  if (winnerEval.totals.bright > runnerEval.totals.bright) reasons.push("광 " + winnerEval.totals.bright + "장으로 주도권을 잡았습니다.");
-  if (winnerCombos.length) reasons.push(winnerCombos.join(", ") + " 완성이 점수 차를 벌렸습니다.");
-  if (winnerEval.totals.ribbon > runnerEval.totals.ribbon && winnerEval.totals.ribbon >= 5) reasons.push("띠 " + winnerEval.totals.ribbon + "장으로 추가 점수를 냈습니다.");
-  if (winnerEval.totals.animal > runnerEval.totals.animal && winnerEval.totals.animal >= 5) reasons.push("열끗 " + winnerEval.totals.animal + "장으로 추가 점수를 챙겼습니다.");
-  if (winnerEval.totals.junk > runnerEval.totals.junk && winnerEval.totals.junk >= 10) reasons.push("피 " + winnerEval.totals.junk + "장으로 막판 점수까지 이어졌습니다.");
-  if (!reasons.length) reasons.push("큰 한 방보다 광, 띠, 피를 고르게 모아 끝까지 앞섰습니다.");
-  return reasons.slice(0, 2).join(" ");
+  const winnerReason = buildExactScoreReason(winner);
+  if (!runnerUp || runnerUp === winner) {
+    return `${winner.name}는 ${winnerReason}로 이겼습니다.`;
+  }
+  const runnerReason = buildExactScoreReason(runnerUp);
+  return `${winner.name}는 ${winnerReason}로 ${runnerUp.name}의 ${runnerReason}보다 앞섰습니다.`;
 }
 
 function buildEndGameTutor(state) {
@@ -1500,11 +1547,12 @@ function buildEndGameTutor(state) {
       + '<br><span>' + payout.detail + '</span>'
       + (payout.reasons ? '<br><span>' + payout.reasons + '</span>' : '')
       + (state.endReason === "stop" && tiedTop ? '<br><span>동점 ' + winner.score + '점이었지만 스톱 선언자는 ' + winner.name + '입니다.</span>' : '')
+      + '<br><span><strong>승리 근거</strong> ' + buildExactScoreReason(winner) + '</span>'
       + '<div class="scoreboard-lines">' + scoreboard + '</div>',
-    risk: "<strong>승부 포인트</strong> " + reason,
+    risk: "<strong>왜 이겼나</strong> " + reason,
     skill: runnerUp && runnerUp !== winner
-      ? "<strong>점수 근거</strong> " + winner.name + "는 " + formatPlayerScoreBreakdown(winner) + ". " + runnerUp.name + "는 " + formatPlayerScoreBreakdown(runnerUp) + "."
-      : "<strong>점수 근거</strong> " + winner.name + "는 " + formatPlayerScoreBreakdown(winner) + ".",
+      ? "<strong>점수 비교</strong> " + winner.name + "는 " + buildExactScoreReason(winner) + ". " + runnerUp.name + "는 " + buildExactScoreReason(runnerUp) + "."
+      : "<strong>점수 근거</strong> " + winner.name + "는 " + buildExactScoreReason(winner) + ".",
     recommendations: []
   };
 }
@@ -1541,7 +1589,7 @@ function assessTutor(state) {
         ? "<strong>지금 추천</strong> " + best.card.label + "부터 정리"
         : "<strong>지금 추천</strong> " + best.card.label)
       : "<strong>지금 추천</strong> 손패 분석 중",
-    strategy: inferStrategyLine(state, user, recommendations),
+    strategy: buildSelfChecklist(state, user),
     flow: best
       ? (pressureLine
         ? pressureLine
@@ -1552,18 +1600,7 @@ function assessTutor(state) {
     risk: rivals.length
       ? "<strong>위험</strong> " + rivals.slice(0, 2).map((item, index) => formatOpponentRiskLine(state, item, index)).join("<br>")
       : "<strong>위험</strong> 아직 큰 위협은 없습니다.",
-    skill: (() => {
-      const stoppableRival = rivals.find((item) => item.goStopStatus && item.goStopStatus.canStopNow);
-      if (stoppableRival) {
-        return "<strong>기술 포인트</strong> "
-          + stoppableRival.player.name + "는 이미 " + stoppableRival.player.score + "점이라 다음 한 턴은 고/스톱 판단까지 같이 봐야 합니다. "
-          + stoppableRival.goStopStatus.reason;
-      }
-      if (allMiss) {
-        return "<strong>기술 포인트</strong> 비풍초보다 광, 열끗, 단 줄 재료를 먼저 아끼세요.";
-      }
-      return "<strong>기술 포인트</strong> " + inferSkillLine(state, user, recommendations);
-    })(),
+    skill: buildOpponentChecklist(state, rivals),
     warnings: threatWarnings.items,
     criticalWarning: threatWarnings.critical,
     recommendations
@@ -2392,11 +2429,11 @@ function renderTutor(state) {
   els.recommendationList.innerHTML = "";
   els.recommendationList.style.display = "none";
   if (els.strategyInsight) {
-    els.strategyInsight.innerHTML = tutor.strategy || "<strong>전략</strong> 지금은 점수 나는 줄을 먼저 보세요.";
+    els.strategyInsight.innerHTML = tutor.strategy || "<strong>내 체크</strong> 눈에 띄는 줄 상태가 아직 없습니다.";
   }
   els.flowInsight.innerHTML = tutor.flow;
   els.riskInsight.innerHTML = tutor.risk;
-  els.skillInsight.innerHTML = tutor.skill;
+  els.skillInsight.innerHTML = tutor.skill || "<strong>상대 체크</strong> 상대 쪽 눈에 띄는 줄 상태가 아직 없습니다.";
 }
 
 function renderSeats(state) {
