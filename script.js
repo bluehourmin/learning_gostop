@@ -1340,12 +1340,13 @@ function summarizePlayerResult(player) {
 
 function buildPayoutSummary(state, winner) {
   if (!winner) {
-    return { base: 0, total: 0, detail: "정산 없음", reasons: "무득점 패 소진이라 승부를 가르지 않았습니다.", wonByJunk: false, losers: [], settlementScore: 0 };
+    return { base: 0, total: 0, detail: "정산 없음", reasons: "무득점 패 소진이라 승부를 가르지 않았습니다.", wonByJunk: false, wonByBright: false, losers: [], settlementScore: 0 };
   }
   const winnerEval = evaluatePlayerScoreBreakdown(winner);
   const settlementScore = Math.max(RULE_CONFIG.stopThreshold || 3, winner.score || 0);
   const base = settlementScore * MONEY_PER_POINT;
   const wonByJunk = winnerEval.parts.some((part) => part.label.startsWith("피 "));
+  const wonByBright = winnerEval.parts.some((part) => part.label.includes("광"));
   const losers = state.players
     .filter((player) => player.seat !== winner.seat)
     .map((player) => {
@@ -1355,6 +1356,10 @@ function buildPayoutSummary(state, winner) {
       if (wonByJunk && loserEval.totals.junk < 6) {
         multiplier *= 2;
         tags.push("피박");
+      }
+      if (wonByBright && loserEval.totals.bright === 0) {
+        multiplier *= 2;
+        tags.push("광박");
       }
       const amount = base * multiplier;
       return { player, amount, multiplier, tags };
@@ -1371,7 +1376,7 @@ function buildPayoutSummary(state, winner) {
     .filter((loser) => loser.tags.length)
     .map((loser) => loser.player.name + "은 " + loser.tags.join(", ") + " 적용");
   const reasons = [...extraReasons, ...tagReasons].join(" · ");
-  return { base, total, detail, reasons, wonByJunk, losers, settlementScore };
+  return { base, total, detail, reasons, wonByJunk, wonByBright, losers, settlementScore };
 }
 
 function getOpponentGoStopStatus(state, player) {
