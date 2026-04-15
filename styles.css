@@ -886,6 +886,26 @@ button {
   gap: 18px;
 }
 
+.sidebar-tabs {
+  display: none;
+  gap: 8px;
+}
+
+.sidebar-tab {
+  border: 1px solid rgba(85, 49, 25, 0.12);
+  background: rgba(255, 250, 241, 0.9);
+  color: #6a4732;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-weight: 800;
+}
+
+.sidebar-tab.active {
+  background: linear-gradient(180deg, #fff0d6, #ebc98f);
+  color: #5d1c12;
+}
+
+
 .tutor-summary {
   padding: 14px 16px;
   border-radius: 18px;
@@ -2074,57 +2094,298 @@ body.viewport-warned .viewport-overlay__panel {
 }
 
 @media (pointer: coarse) and (orientation: landscape) and (max-width: 1180px) {
+  .app-shell {
+    width: min(100vw - 8px, 100%);
+    margin: 4px auto 8px;
+  }
+
+  .hero {
+    padding: 8px 10px;
+    border-radius: 18px;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .compact-hero {
+    min-height: 0;
+  }
+
+  .hero-brand {
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .hero h1 {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .hero-meta-line {
+    display: none;
+  }
+
+  .hero-actions {
+    gap: 6px;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .hero-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-actions button {
+    padding: 7px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
   .layout {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) 248px;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: start;
   }
 
   .table-panel {
-    padding: 14px;
-  }
-
-  .sidebar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .status-panel,
-  .tutor-panel {
-    grid-column: 1 / -1;
-  }
-
-  .chat-panel,
-  .log-panel,
-  .rules-panel {
-    grid-column: span 1;
+    padding: 8px;
+    border-radius: 20px;
   }
 
   .table-board {
-    grid-template-columns: 220px minmax(0, 1fr) 220px;
-    grid-template-rows: minmax(320px, 1fr) auto;
-    gap: 10px;
-    padding: 10px;
+    grid-template-columns: 128px minmax(0, 1fr) 128px;
+    grid-template-rows: minmax(252px, 1fr) auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .field-zone {
+    gap: 8px;
+  }
+
+  .field-header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .field-header h2 {
+    font-size: 17px;
+  }
+
+  .field-read {
+    max-width: 170px;
+    font-size: 11px;
+    line-height: 1.35;
   }
 
   .field-area {
-    min-height: 270px;
-    gap: 10px;
+    min-height: 210px;
+    padding: 10px;
+    gap: 8px;
+    grid-template-columns: repeat(4, minmax(54px, 1fr));
+  }
+
+  .stock-wrap {
+    gap: 4px;
   }
 
   .seat {
-    padding: 10px;
+    padding: 8px;
+    border-radius: 18px;
   }
 
-  .user-seat {
-    padding-top: 10px;
+  .side-seat {
+    gap: 6px;
+    min-height: 0;
+  }
+
+  .seat-header {
+    margin-bottom: 4px;
+  }
+
+  .seat-name {
+    font-size: 14px;
+  }
+
+  .seat-score,
+  .seat-group-label,
+  .captured-empty,
+  .hidden-hand-count,
+  .stock-label,
+  .seat-comment {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .hidden-hand-summary {
+    padding: 6px 8px;
   }
 
   .card-shell {
-    width: 72px;
+    width: 54px;
   }
 
   .card-shell.small {
-    width: 56px;
+    width: 42px;
+  }
+
+  .opponent-captured-strip {
+    min-height: 214px;
+  }
+
+  .public-zone.left-public,
+  .public-zone.right-public {
+    width: 268px;
+    min-height: 214px;
+  }
+
+  .left-seat .opponent-captured-strip .captured-layout,
+  .right-seat .opponent-captured-strip .captured-layout {
+    min-width: 286px;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.98fr) minmax(0, 1.12fr);
+  }
+
+  .left-seat .opponent-captured-strip .captured-bright,
+  .left-seat .opponent-captured-strip .captured-ribbon,
+  .left-seat .opponent-captured-strip .captured-animal,
+  .left-seat .opponent-captured-strip .captured-junk,
+  .right-seat .opponent-captured-strip .captured-bright,
+  .right-seat .opponent-captured-strip .captured-ribbon,
+  .right-seat .opponent-captured-strip .captured-animal,
+  .right-seat .opponent-captured-strip .captured-junk {
+    min-height: 66px;
+  }
+
+  .left-seat .opponent-captured-strip .captured-bright {
+    transform: translateY(-24px);
+  }
+
+  .right-seat .opponent-captured-strip .captured-bright {
+    transform: translateY(24px);
+  }
+
+  .left-seat .opponent-captured-strip .captured-ribbon,
+  .left-seat .opponent-captured-strip .captured-animal,
+  .right-seat .opponent-captured-strip .captured-ribbon,
+  .right-seat .opponent-captured-strip .captured-animal {
+    min-width: 92px;
+  }
+
+  .left-seat .opponent-captured-strip .captured-junk,
+  .right-seat .opponent-captured-strip .captured-junk {
+    min-width: 126px;
+    min-height: 126px;
+  }
+
+  .captured-layout {
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 0.92fr) minmax(0, 1.05fr);
+    gap: 6px;
+  }
+
+  .captured-bright,
+  .captured-ribbon,
+  .captured-animal,
+  .captured-junk {
+    padding: 6px;
+    border-radius: 12px;
+  }
+
+  .captured-junk {
+    min-height: 132px;
+    gap: 8px;
+  }
+
+  .captured-junk-row .card-shell.small,
+  .captured-bright .card-shell.small,
+  .captured-ribbon .card-shell.small,
+  .captured-animal .card-shell.small {
+    width: 42px;
+  }
+
+  .captured-bright .card-shell.small + .card-shell.small,
+  .captured-ribbon .card-shell.small + .card-shell.small,
+  .captured-animal .card-shell.small + .card-shell.small,
+  .captured-junk-row .card-shell.small + .card-shell.small {
+    margin-left: -27px;
+  }
+
+  .sidebar {
+    gap: 8px;
+    position: sticky;
+    top: 6px;
+    align-self: start;
+  }
+
+  .panel {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .status-panel {
+    gap: 8px;
+  }
+
+  .sidebar-topbar,
+  .sidebar-meta {
+    gap: 6px;
+  }
+
+  .sidebar-pace-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .sidebar-pace-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .sidebar-pace-buttons .pace-btn,
+  .status-panel .next-btn {
+    font-size: 11px;
+    padding: 8px 8px;
+  }
+
+  .status-panel .next-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sidebar-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .sidebar-tab {
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+
+  .panel[data-panel] {
+    max-height: calc(100vh - 250px);
+    overflow: auto;
+  }
+
+  .tutor-summary,
+  .chat-log,
+  .event-log,
+  .rules-summary,
+  .insight-grid article,
+  .chat-input,
+  .chat-send,
+  .warning-chip {
+    font-size: 12px;
+  }
+
+  .event-log,
+  .chat-log {
+    max-height: 180px;
   }
 }
 

@@ -101,7 +101,8 @@ const app = {
     orientation: "landscape",
     blocked: false,
     warned: false
-  }
+  },
+  sidebarTab: "tutor"
 };
 
 const els = {
@@ -145,7 +146,10 @@ const els = {
   viewportDeviceTags: document.getElementById("viewport-device-tags"),
   viewportRefreshBtn: document.getElementById("viewport-refresh-btn"),
   viewportContinueBtn: document.getElementById("viewport-continue-btn"),
-  viewportReferenceBtn: document.getElementById("viewport-reference-btn")
+  viewportReferenceBtn: document.getElementById("viewport-reference-btn"),
+  sidebar: document.querySelector(".sidebar"),
+  sidebarTabs: Array.from(document.querySelectorAll("[data-sidebar-tab]")),
+  sidebarPanels: Array.from(document.querySelectorAll("[data-panel]"))
 };
 
 const PACE_DELAY = {
@@ -2098,6 +2102,32 @@ function getViewportState() {
   return { deviceType, orientation, blocked, warned };
 }
 
+function isCompactTouchLayout() {
+  const viewport = app.viewport || getViewportState();
+  return viewport.deviceType !== "desktop" && viewport.orientation === "landscape" && window.innerWidth <= 1180;
+}
+
+function renderSidebarLayout() {
+  const compact = isCompactTouchLayout();
+  document.body.classList.toggle("compact-touch-layout", compact);
+  if (els.sidebar) {
+    els.sidebar.dataset.activeTab = app.sidebarTab;
+  }
+  if (els.sidebarTabs) {
+    els.sidebarTabs.forEach((button) => {
+      const active = button.dataset.sidebarTab === app.sidebarTab;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+      button.hidden = !compact;
+    });
+  }
+  if (els.sidebarPanels) {
+    els.sidebarPanels.forEach((panel) => {
+      panel.hidden = compact && panel.dataset.panel !== app.sidebarTab;
+    });
+  }
+}
+
 function renderViewportGuidance() {
   if (!els.viewportOverlay) return;
   const viewport = getViewportState();
@@ -2884,6 +2914,7 @@ function render() {
   renderPaceControls();
   syncOptionButtons();
   renderViewportGuidance();
+  renderSidebarLayout();
   ensureAiTurnProgress();
 }
 
@@ -2950,6 +2981,14 @@ if (els.viewportContinueBtn) {
 }
 if (els.viewportReferenceBtn) {
   els.viewportReferenceBtn.addEventListener("click", openReferenceModal);
+}
+if (els.sidebarTabs) {
+  els.sidebarTabs.forEach((button) => {
+    button.addEventListener("click", () => {
+      app.sidebarTab = button.dataset.sidebarTab || "tutor";
+      renderSidebarLayout();
+    });
+  });
 }
 window.addEventListener("resize", () => updateViewportGuidance());
 window.addEventListener("orientationchange", () => {

@@ -96,6 +96,20 @@
     ]
   },
   {
+    "id": "mobile_landscape_sidebar_tabs",
+    "category": "ui",
+    "severity": "medium",
+    "description": "모바일 가로와 작은 태블릿 가로에서 상태 카드는 유지하고 나머지 사이드바는 탭 전환 구조여야 한다.",
+    "docPatterns": [
+      "모바일 가로에서는 상태 카드는 항상 보이고, 튜터/코치/로그/룰 패널은 사이드바 탭으로 한 번에 하나씩 본다"
+    ],
+    "codePatterns": [
+      "sidebar-tabs",
+      "data-sidebar-tab",
+      "compact-touch-layout"
+    ]
+  },
+  {
     "id": "reference_guide_exists",
     "category": "learning",
     "severity": "medium",

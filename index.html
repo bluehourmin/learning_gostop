@@ -81,7 +81,13 @@
             <button id="next-turn-btn" class="pace-btn next-btn" disabled>다음 턴 보기</button>
           </div>
         </section>
-        <section class="panel tutor-panel">
+        <nav class="sidebar-tabs" aria-label="모바일 사이드바 탭">
+          <button type="button" class="sidebar-tab active" data-sidebar-tab="tutor">튜터</button>
+          <button type="button" class="sidebar-tab" data-sidebar-tab="coach">코치</button>
+          <button type="button" class="sidebar-tab" data-sidebar-tab="log">로그</button>
+          <button type="button" class="sidebar-tab" data-sidebar-tab="rules">룰</button>
+        </nav>
+        <section class="panel tutor-panel" data-panel="tutor">
           <div class="panel-heading">
             <h2>튜터</h2>
           </div>
@@ -107,7 +113,7 @@
             </article>
           </div>
         </section>
-        <section class="panel chat-panel">
+        <section class="panel chat-panel" data-panel="coach">
           <div class="panel-heading">
             <h2>코치와 상의</h2>
           </div>
@@ -117,13 +123,13 @@
             <button class="primary chat-send" type="submit">보내기</button>
           </form>
         </section>
-        <section class="panel log-panel">
+        <section class="panel log-panel" data-panel="log">
           <div class="panel-heading">
             <h2>해설 로그</h2>
           </div>
           <div id="event-log" class="event-log"></div>
         </section>
-        <details class="panel rules-panel compact-rules">
+        <details class="panel rules-panel compact-rules" data-panel="rules">
           <summary class="panel-heading compact-rules-summary">
             <h2>룰 기준</h2>
           </summary>
