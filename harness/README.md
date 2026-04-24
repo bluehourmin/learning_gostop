@@ -1,9 +1,13 @@
 # 고스돕 하네스
 
-이 하네스는 다섯 가지를 점검한다.
+이 하네스는 개발용 검수 레이어다. 게임 런타임에 로드하지 않고, 커밋 전/배포 전에만 실행하는 것을 전제로 한다.
+
+이 하네스는 일곱 가지를 점검한다.
 
 - `구조 검사`: 핵심 문서와 엔트리 파일, watchdog 같은 보호막이 있는지
 - `acceptance 검사`: 사용자가 요구한 핵심 규칙과 UI 약속이 코드/문서에 반영됐는지
+- `리서치/채택 검수`: 같은 게임 룰, 유사 UX, 승리 전략 조사와 채택 추적 문서가 있는지
+- `승리 전략 검수`: “무엇을 먹고, 무엇을 막고, 무엇을 버리면 안 되는지” 기준이 문서와 코드에 함께 있는지
 - `시각 검수`: 메인보드 비침범, 카드 크기, 겹침 비율, 모바일 가로 전용 레이아웃 같은 시각 규칙이 유지되는지
 - `턴 흐름 검수`: 새 판 보호막, 모션 정리 경로, watchdog, 뒤집기 reveal 순서가 유지되는지
 - `백로그 상태 요약`: `docs/gostop-backlog.md` 기준으로 치명/미완료/부분 반영/완료 현황이 어떤지
@@ -20,6 +24,8 @@ harness/
   checks/
     structural.js           # 구조 검사
     acceptance.js           # 문서/코드 반영 검사
+    research.js             # 리서치/채택 문서 검사
+    strategy.js             # 승리 전략 반영 검사
     backlog.js              # 백로그 파싱과 상태 요약
     visual.js               # 시각 레이아웃 검수
     runtime-turn-flow.js    # 턴 흐름/모션 안정성 검수
@@ -28,6 +34,10 @@ harness/
     loader.js               # 프로젝트 파일 로딩
   reporters/
     console.js              # 콘솔 출력
+research/
+  sources/                  # 리서치 원문/요약
+  adoption/                 # 후보/채택/거절 추적
+  findings/                 # 전략 규칙 JSON
 ```
 
 ## 실행
@@ -46,16 +56,21 @@ node /Users/edu/Documents/GitHub/learning_gostop/harness/run-harness.js
 - 턴 멈춤 방지용 보호막이 코드에 있는지
 - 모바일/태블릿 안내 UI가 있는지
 - 전체 패 참고표 기능이 있는지
+- 같은 게임 룰/유사 UX/승리 전략 조사 문서가 있는지
+- 채택한 리서치 결과가 실제 스펙/코드에 연결돼 있는지
+- 쌍피 우선, 비풍초 정리, 살아 있는 단/고도리 보존, 광 2장/피 8장 경고 같은 전략 기준이 살아 있는지
 - 메인보드와 플레이어 구역이 서로 침범하지 않도록 overflow 가 걸려 있는지
 - 카드 크기와 겹침 비율이 과도하지 않은지
 - 뒤집기 reveal -> 매칭 -> 턴 종료 순서 보호막이 있는지
 
 ## 검수 점수 기준
 
-- `구조/기본 안전성`: 15점
-- `규칙/요구사항 반영`: 25점
-- `시각 레이아웃 검수`: 25점
-- `턴 흐름/모션 안정성 검수`: 25점
+- `구조/기본 안전성`: 10점
+- `규칙/요구사항 반영`: 20점
+- `리서치/채택 추적성`: 10점
+- `승리 전략 검수`: 20점
+- `시각 레이아웃 검수`: 15점
+- `턴 흐름/모션 안정성 검수`: 15점
 - `백로그 건강도`: 10점
 
 총점 `90점 이상`이어야 통과한다.
@@ -63,10 +78,13 @@ node /Users/edu/Documents/GitHub/learning_gostop/harness/run-harness.js
 
 - 핵심 파일 누락
 - `high` severity acceptance 실패
+- `high` severity 전략 검수 실패
 
 ## 확장 방법
 
 - `harness/checklist.json`에 새 항목을 추가하면 acceptance 검사가 늘어난다.
+- `research/` 아래에 조사 원문과 채택 로그를 남기고, 하네스는 그 존재와 연결성을 점검한다.
+- `research/findings/strategy-rules.json`에 새 전략 원칙을 추가하면 전략 검사가 늘어난다.
 - 시각 규칙이 늘어나면 `checks/visual.js`에 추가한다.
 - 턴/모션 보호막이 늘어나면 `checks/runtime-turn-flow.js`에 추가한다.
 - 점수 기준을 바꾸고 싶으면 `checks/review-score.js`를 조정한다.

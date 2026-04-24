@@ -15,16 +15,38 @@ function read(rel) {
   return fs.readFileSync(resolvePath(rel), 'utf8');
 }
 
+function readOptional(rel, fallback = '') {
+  return exists(rel) ? read(rel) : fallback;
+}
+
+function readJsonOptional(rel, fallback = null) {
+  if (!exists(rel)) return fallback;
+  try {
+    return JSON.parse(read(rel));
+  } catch (error) {
+    return fallback;
+  }
+}
+
 function loadProjectFiles() {
   return {
-    readme: exists('README.md') ? read('README.md') : '',
-    coreRules: exists('docs/gostop-core-rules.md') ? read('docs/gostop-core-rules.md') : '',
-    tutorSpec: exists('docs/gostop-tutor-spec.md') ? read('docs/gostop-tutor-spec.md') : '',
-    uiSpec: exists('docs/gostop-ui-spec.md') ? read('docs/gostop-ui-spec.md') : '',
-    backlog: exists('docs/gostop-backlog.md') ? read('docs/gostop-backlog.md') : '',
-    script: exists('script.js') ? read('script.js') : '',
-    index: exists('index.html') ? read('index.html') : '',
-    styles: exists('styles.css') ? read('styles.css') : ''
+    readme: readOptional('README.md'),
+    coreRules: readOptional('docs/gostop-core-rules.md'),
+    tutorSpec: readOptional('docs/gostop-tutor-spec.md'),
+    uiSpec: readOptional('docs/gostop-ui-spec.md'),
+    backlog: readOptional('docs/gostop-backlog.md'),
+    script: readOptional('script.js'),
+    index: readOptional('index.html'),
+    styles: readOptional('styles.css'),
+    research: {
+      sameGameRules: readOptional('research/sources/same-game-rules.md'),
+      similarExperiences: readOptional('research/sources/similar-experiences.md'),
+      winningStrategy: readOptional('research/sources/winning-strategy.md'),
+      candidates: readOptional('research/adoption/candidates.md'),
+      adopted: readOptional('research/adoption/adopted.md'),
+      rejected: readOptional('research/adoption/rejected.md')
+    },
+    strategyRules: readJsonOptional('research/findings/strategy-rules.json', [])
   };
 }
 

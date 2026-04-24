@@ -56,6 +56,12 @@ function reportHarnessResults(result) {
     }
   });
 
+  printSection('리서치/채택 검수');
+  reportCategory(result.research);
+
+  printSection('승리 전략 검수');
+  reportCategory(result.strategy);
+
   printSection('시각 검수');
   reportCategory(result.visual);
 

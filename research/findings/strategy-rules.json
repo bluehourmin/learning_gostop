@@ -1,0 +1,52 @@
+[
+  {
+    "id": "capture_double_junk_first",
+    "label": "쌍피 먹기 우선 기준이 있다",
+    "severity": "high",
+    "maxPoints": 4,
+    "docPatterns": ["쌍피 우선", "쌍피를 먼저"],
+    "codePatterns": ["쌍피부터 챙겨 피 점수를 키우세요.", "if (getJunkValue(left) >= 2) leftValue += 24;"],
+    "passDetail": "쌍피 우선 먹기 기준이 문서와 추천 코드에 함께 존재",
+    "remedy": "먹기 우선순위에서 쌍피 보너스와 설명을 같이 유지해 주세요."
+  },
+  {
+    "id": "avoid_throwing_live_combo_material",
+    "label": "살아 있는 단/고도리 재료 보존 기준이 있다",
+    "severity": "high",
+    "maxPoints": 4,
+    "docPatterns": ["홍단", "청단", "초단", "고도리", "함부로 버리지 않는다"],
+    "codePatterns": ["evaluateLiveComboHold", "단 줄 핵심 재료라 지금은 보류", "단 줄 재료가 될 수 있어 보류 가치가 있습니다."],
+    "passDetail": "단/고도리 줄 보존 기준이 문서와 버리기 추천 로직에 존재",
+    "remedy": "살아 있는 줄 재료는 버리기 패널티와 설명을 같이 가져가야 합니다."
+  },
+  {
+    "id": "prefer_bipungcho_only_when_no_capture",
+    "label": "먹을 게 없을 때 비풍초 정리 기준이 있다",
+    "severity": "medium",
+    "maxPoints": 4,
+    "docPatterns": ["비풍초", "먹을 게 없는 턴"],
+    "codePatterns": ["비광이라 비풍초 우선순위로 먼저 정리하는 편입니다.", "풍 패라 먹을 게 없는 턴엔 먼저 정리하는 편입니다."],
+    "passDetail": "비풍초 정리 기준이 문서와 버리기 이유에 존재",
+    "remedy": "비풍초는 먹을 게 없는 턴 한정 원칙으로 유지해 주세요."
+  },
+  {
+    "id": "warn_near_scoring_lines",
+    "label": "광 2장·피 8장·고도리 2장 경고 기준이 있다",
+    "severity": "high",
+    "maxPoints": 4,
+    "docPatterns": ["광 2장", "고도리 2장", "피 8장", "경고칩"],
+    "codePatterns": ["고도리 줄이 강합니다", "score.totals.bright >= 2", "피 중심"],
+    "passDetail": "근접 점수 경고 기준이 문서와 판세 요약 코드에 존재",
+    "remedy": "완성 직전 줄은 체크리스트 경고와 판세 요약에 함께 드러나야 합니다."
+  },
+  {
+    "id": "explain_exact_winning_reason",
+    "label": "왜 이겼는지 항목별 설명이 있다",
+    "severity": "high",
+    "maxPoints": 4,
+    "docPatterns": ["누가 왜 이겼는지", "띠 5장 1점", "고/스톱 판단"],
+    "codePatterns": ["승리 근거", "왜 이겼나", "buildExactScoreReason"],
+    "passDetail": "종료 해설에서 승리 근거를 항목별로 설명",
+    "remedy": "총점만 말하지 말고 광/띠/피/고 횟수를 항목별로 유지해 주세요."
+  }
+]

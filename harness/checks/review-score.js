@@ -10,6 +10,16 @@ const SEVERITY_WEIGHTS = {
   low: 1
 };
 
+const CATEGORY_TARGETS = {
+  structural: 10,
+  acceptance: 20,
+  research: 10,
+  strategy: 20,
+  visual: 15,
+  runtime: 15,
+  backlog: 10
+};
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -18,9 +28,16 @@ function summarizeFailures(items) {
   return items.filter((item) => !item.ok).map((item) => item.message || item.description || item.label || item.id);
 }
 
+function normalizeScore(rawScore, rawMax, targetMax) {
+  if (!rawMax) return 0;
+  return Math.round((rawScore / rawMax) * targetMax);
+}
+
 function scoreStructural(structural) {
-  const maxScore = 15;
-  const score = structural.reduce((sum, item) => sum + (item.ok ? (STRUCTURAL_WEIGHTS[item.id] || 0) : 0), 0);
+  const rawMax = Object.values(STRUCTURAL_WEIGHTS).reduce((sum, value) => sum + value, 0);
+  const rawScore = structural.reduce((sum, item) => sum + (item.ok ? (STRUCTURAL_WEIGHTS[item.id] || 0) : 0), 0);
+  const maxScore = CATEGORY_TARGETS.structural;
+  const score = normalizeScore(rawScore, rawMax, maxScore);
   return {
     id: 'structural',
     label: '구조/기본 안전성',
@@ -31,7 +48,7 @@ function scoreStructural(structural) {
 }
 
 function scoreAcceptance(acceptance) {
-  const maxScore = 25;
+  const maxScore = CATEGORY_TARGETS.acceptance;
   const totalWeight = acceptance.reduce((sum, item) => sum + (SEVERITY_WEIGHTS[item.severity] || 0), 0) || 1;
   const passedWeight = acceptance.reduce((sum, item) => sum + (item.ok ? (SEVERITY_WEIGHTS[item.severity] || 0) : 0), 0);
   const score = Math.round((passedWeight / totalWeight) * maxScore);
@@ -44,8 +61,18 @@ function scoreAcceptance(acceptance) {
   };
 }
 
+function scoreCategory(category, targetMax) {
+  return {
+    id: category.id,
+    label: category.label,
+    score: normalizeScore(category.score, category.maxScore, targetMax),
+    maxScore: targetMax,
+    failed: summarizeFailures(category.checks)
+  };
+}
+
 function scoreBacklog(backlogSummary) {
-  const maxScore = 10;
+  const maxScore = CATEGORY_TARGETS.backlog;
   let score = maxScore;
   const critical = backlogSummary.counts['치명'] || 0;
   const incomplete = backlogSummary.counts['미완료'] || 0;
@@ -67,24 +94,14 @@ function scoreBacklog(backlogSummary) {
   };
 }
 
-function computeReviewGate({ structural, acceptance, visual, runtime, backlogSummary }) {
+function computeReviewGate({ structural, acceptance, research, strategy, visual, runtime, backlogSummary }) {
   const categories = [
     scoreStructural(structural),
     scoreAcceptance(acceptance),
-    {
-      id: visual.id,
-      label: visual.label,
-      score: visual.score,
-      maxScore: visual.maxScore,
-      failed: summarizeFailures(visual.checks)
-    },
-    {
-      id: runtime.id,
-      label: runtime.label,
-      score: runtime.score,
-      maxScore: runtime.maxScore,
-      failed: summarizeFailures(runtime.checks)
-    },
+    scoreCategory(research, CATEGORY_TARGETS.research),
+    scoreCategory(strategy, CATEGORY_TARGETS.strategy),
+    scoreCategory(visual, CATEGORY_TARGETS.visual),
+    scoreCategory(runtime, CATEGORY_TARGETS.runtime),
     scoreBacklog(backlogSummary)
   ];
 
@@ -92,7 +109,8 @@ function computeReviewGate({ structural, acceptance, visual, runtime, backlogSum
   const maxScore = categories.reduce((sum, item) => sum + item.maxScore, 0);
   const hardFailures = [
     ...structural.filter((item) => !item.ok && item.id === 'files_exist').map((item) => item.message),
-    ...acceptance.filter((item) => !item.ok && item.severity === 'high').map((item) => item.description)
+    ...acceptance.filter((item) => !item.ok && item.severity === 'high').map((item) => item.description),
+    ...strategy.checks.filter((item) => !item.ok && item.severity === 'high').map((item) => item.label)
   ];
   const passed = totalScore >= 90 && hardFailures.length === 0;
 
