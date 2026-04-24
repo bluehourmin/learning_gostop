@@ -90,6 +90,8 @@ const app = {
   advisorMode: "coach",
   pace: "slow",
   pendingAiTimeout: null,
+  aiScheduledAt: 0,
+  aiScheduledSeat: null,
   motionTimeout: null,
   afterMotionCallback: null,
   aiWatchdog: null,
@@ -276,6 +278,7 @@ function createGame() {
     winner: null,
     isDraw: false,
     endReason: null,
+    turnStartedAt: Date.now(),
     motion: createMotionState(),
     chatHistory: [{ role: "assistant", text: "지금 판 기준으로 같이 보겠습니다. 헷갈리는 패나 고/스톱, 상대 흐름을 물어보세요." }],
     gameToken: app.gameToken
@@ -355,8 +358,11 @@ function resolveBombPlay(state, playerIndex, cardId, month) {
   matches.forEach((match) => removeCard(state.field, match.id));
   resolveCapture(player, removed[0], [...removed.slice(1), ...matches]);
   logEvent(state, "폭탄", `${player.name}가 ${month}월 세 장을 한꺼번에 공개해 ${matches.length ? matches.map((card) => card.label).join(', ') + '까지' : '바닥 짝 없이'} 정리했습니다.`);
-  drawAndResolve(state, playerIndex, { playedCard: removed[0], playMatchCount: matches.length, drawCaptured: [] });
-  queueMotion(state, { capturedIds: [...removed.map((card) => card.id), ...matches.map((card) => card.id)], seat: playerIndex, stockPulse: true }, () => finishTurn(state, playerIndex));
+  queueMotion(
+    state,
+    { capturedIds: [...removed.map((card) => card.id), ...matches.map((card) => card.id)], seat: playerIndex, stockPulse: true },
+    () => drawAndResolve(state, playerIndex, { playedCard: removed[0], playMatchCount: matches.length, drawCaptured: [] }, () => finishTurn(state, playerIndex))
+  );
   return true;
 }
 
@@ -1275,17 +1281,36 @@ function resolveSimulationGoStop(state) {
 function runSimulationAiTurn(state) {
   if (state.winner != null || state.currentPlayer === USER_INDEX) return;
   const player = state.players[state.currentPlayer];
-  const shakenMonth = maybeDeclareAiShake(state, player);
-  if (shakenMonth != null) {
-    player.shakeCount = player.shakeCount;
+  try {
+    const shakenMonth = maybeDeclareAiShake(state, player);
+    if (shakenMonth != null) {
+      player.shakeCount = player.shakeCount;
+    }
+    const choices = player.hand.map((card) => scoreMove(state, player, card)).sort((a, b) => b.score - a.score);
+    const best = choices[0];
+    if (!best || !best.card) {
+      const fallbackCard = player.hand[0];
+      if (!fallbackCard) {
+        endGame(state, null, "deck");
+        return;
+      }
+      const matches = getMatches(fallbackCard, state.field);
+      const preferred = matches.length ? (pickPreferredCapture(matches) || matches[0]) : null;
+      resolveCardPlay(state, player.seat, fallbackCard.id, preferred?.id || null, { auto: true });
+      resolveSimulationGoStop(state);
+      return;
+    }
+    resolveCardPlay(state, player.seat, best.card.id, best.preferredTargetId, { auto: true });
+  } catch (error) {
+    const fallbackCard = player.hand[0];
+    if (!fallbackCard) {
+      endGame(state, null, "deck");
+      return;
+    }
+    const matches = getMatches(fallbackCard, state.field);
+    const preferred = matches.length ? (pickPreferredCapture(matches) || matches[0]) : null;
+    resolveCardPlay(state, player.seat, fallbackCard.id, preferred?.id || null, { auto: true });
   }
-  const choices = player.hand.map((card) => scoreMove(state, player, card)).sort((a, b) => b.score - a.score);
-  const best = choices[0];
-  if (!best) {
-    endGame(state, null, "deck");
-    return;
-  }
-  resolveCardPlay(state, player.seat, best.card.id, best.preferredTargetId, { auto: true });
   resolveSimulationGoStop(state);
 }
 
@@ -1784,6 +1809,7 @@ function finishTurn(state, playerIndex) {
     return;
   }
   state.currentPlayer = (playerIndex + 1) % state.players.length;
+  state.turnStartedAt = Date.now();
   if (state.players[state.currentPlayer].hand.length === 0) {
     endGame(state, null, "deck");
     return;
@@ -1904,26 +1930,58 @@ function endGame(state, winnerIndex = null, endReason = null) {
   render();
 }
 
-function runAiTurn() {
-  clearScheduledAiTurn();
-  const state = app.state;
-  if (!state || state.winner != null || state.currentPlayer === USER_INDEX) return;
-  const player = state.players[state.currentPlayer];
-  const shakenMonth = maybeDeclareAiShake(state, player);
-  if (shakenMonth != null) {
-    assessTutor(state);
-    render();
-  }
-  const choices = player.hand.map((card) => scoreMove(state, player, card)).sort((a, b) => b.score - a.score);
-  const best = choices[0];
-  if (!best) return;
-  resolveCardPlay(state, player.seat, best.card.id, best.preferredTargetId, { auto: true });
-}
-
 function clearScheduledAiTurn() {
   if (app.pendingAiTimeout != null) {
     window.clearTimeout(app.pendingAiTimeout);
     app.pendingAiTimeout = null;
+  }
+  app.aiScheduledAt = 0;
+  app.aiScheduledSeat = null;
+}
+
+function isMotionBusy(state) {
+  return !!(state.motion && state.motion.token);
+}
+
+function fallbackResolveAiTurn(state, player, reason = "") {
+  const fallbackCard = player.hand[0];
+  if (!fallbackCard) {
+    finishTurn(state, player.seat);
+    return;
+  }
+  const matches = getMatches(fallbackCard, state.field);
+  const preferred = matches.length ? (pickPreferredCapture(matches) || matches[0]) : null;
+  const suffix = reason ? ` (${reason})` : "";
+  logEvent(state, "안전 진행", `${player.name} 자동 추천이 막혀 기본 진행으로 넘어갑니다${suffix}.`);
+  resolveCardPlay(state, player.seat, fallbackCard.id, preferred?.id || null, { auto: true });
+}
+
+function runAiTurn() {
+  clearScheduledAiTurn();
+  const state = app.state;
+  if (!state || state.winner != null || state.currentPlayer === USER_INDEX) return;
+  if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
+  if (isMotionBusy(state)) return;
+  const player = state.players[state.currentPlayer];
+  try {
+    const shakenMonth = maybeDeclareAiShake(state, player);
+    if (shakenMonth != null) {
+      assessTutor(state);
+      render();
+    }
+    const choices = player.hand.map((card) => scoreMove(state, player, card)).sort((a, b) => b.score - a.score);
+    const best = choices[0];
+    if (!best || !best.card) {
+      fallbackResolveAiTurn(state, player, "추천 없음");
+      return;
+    }
+    const resolved = resolveCardPlay(state, player.seat, best.card.id, best.preferredTargetId, { auto: true });
+    if (!resolved) {
+      fallbackResolveAiTurn(state, player, "선택 보류");
+    }
+  } catch (error) {
+    console.error("AI turn failed, using fallback move.", error);
+    fallbackResolveAiTurn(state, player, "예외 복구");
   }
 }
 
@@ -1943,9 +2001,17 @@ function scheduleAiTurn() {
     return;
   }
   const gameToken = state.gameToken;
+  const scheduledSeat = state.currentPlayer;
+  app.aiScheduledAt = Date.now();
+  app.aiScheduledSeat = scheduledSeat;
   app.pendingAiTimeout = window.setTimeout(() => {
-    if (app.gameToken !== gameToken) return;
+    if (app.gameToken !== gameToken || !app.state || app.state.currentPlayer !== scheduledSeat) {
+      clearScheduledAiTurn();
+      return;
+    }
     app.pendingAiTimeout = null;
+    app.aiScheduledAt = 0;
+    app.aiScheduledSeat = null;
     runAiTurn();
   }, PACE_DELAY[app.pace]);
   renderPaceControls();
@@ -1956,7 +2022,17 @@ function ensureAiTurnProgress() {
   if (!state || state.winner != null) return;
   if (state.currentPlayer === USER_INDEX) return;
   if (state.pendingChoice || state.pendingFlexibleChoice || state.pendingGoStopChoice || state.pendingShakeChoice) return;
-  if (app.pendingAiTimeout != null) return;
+  if (isMotionBusy(state)) return;
+  if (app.pendingAiTimeout != null) {
+    const delay = PACE_DELAY[app.pace] || 0;
+    const wrongSeat = app.aiScheduledSeat != null && app.aiScheduledSeat !== state.currentPlayer;
+    const overdue = app.aiScheduledAt > 0 && Date.now() - app.aiScheduledAt > delay + 1400;
+    if (wrongSeat || overdue) {
+      clearScheduledAiTurn();
+      runAiTurn();
+    }
+    return;
+  }
   if (app.pace === "step") return;
   scheduleAiTurn();
 }
@@ -1977,7 +2053,16 @@ function startAiWatchdog() {
     }
     if (state.currentPlayer === USER_INDEX) return;
     if (hasPendingModal) return;
-    if (app.pendingAiTimeout != null) return;
+    if (app.pendingAiTimeout != null) {
+      const delay = PACE_DELAY[app.pace] || 0;
+      const overdue = app.aiScheduledAt > 0 && Date.now() - app.aiScheduledAt > delay + 1600;
+      const wrongSeat = app.aiScheduledSeat != null && app.aiScheduledSeat !== state.currentPlayer;
+      if (overdue || wrongSeat) {
+        clearScheduledAiTurn();
+        runAiTurn();
+      }
+      return;
+    }
     if (app.pace === "step") return;
     scheduleAiTurn();
   }, 500);
@@ -2600,6 +2685,7 @@ function continueAfterGo(state, playerIndex) {
   state.pendingFlexibleChoice = null;
   state.pendingShakeChoice = null;
   state.currentPlayer = (playerIndex + 1) % state.players.length;
+  state.turnStartedAt = Date.now();
   assessTutor(state);
   render();
   if (state.winner == null && state.currentPlayer !== USER_INDEX) {

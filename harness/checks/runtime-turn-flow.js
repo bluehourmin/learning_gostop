@@ -67,6 +67,22 @@ function runRuntimeTurnFlowChecks({ files }) {
       '뒤집기 카드는 revealedCard 모션 뒤에 resolveRevealedDraw 에서 처리하세요.'
     ),
     makeCheck(
+      'ai_fallback_exists',
+      'AI 추천 실패 시 기본 진행으로 복구하는 안전 수가 있다',
+      3,
+      script.includes('function fallbackResolveAiTurn(state, player, reason = "")') && script.includes('자동 추천이 막혀 기본 진행으로 넘어갑니다'),
+      '추천 계산이 실패해도 AI 턴이 멈추지 않도록 기본 진행 복구 함수가 있어야 한다.',
+      'AI fallback 경로를 유지해 턴 멈춤을 막으세요.'
+    ),
+    makeCheck(
+      'stale_ai_recovery',
+      '오래 멈춘 AI 예약을 감지해 다시 굴린다',
+      3,
+      script.includes('const overdue = app.aiScheduledAt > 0') && script.includes('const wrongSeat = app.aiScheduledSeat != null'),
+      '타임아웃이 꼬인 경우를 대비해 오래 멈춘 AI 예약을 다시 굴리는 복구가 필요하다.',
+      'aiScheduledAt / aiScheduledSeat 기반의 복구 조건을 유지하세요.'
+    ),
+    makeCheck(
       'no_direct_ai_bypass',
       'AI 턴은 scheduleAiTurn 경유로 예약된다',
       2,
