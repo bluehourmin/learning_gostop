@@ -910,11 +910,10 @@ function groupCapturedCards(cards) {
 function renderCapturedLayout(cards, options = {}) {
   const motion = app.state?.motion || createMotionState();
   const compact = options.compact === true;
-  const seatRotationClass = options.seat === 1 ? " opponent-rot-cw" : options.seat === 2 ? " opponent-rot-ccw" : "";
   const groups = groupCapturedCards(cards);
   const buildExtraClass = (card) => {
     const motionClass = motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "";
-    return (motionClass + seatRotationClass).trim();
+    return motionClass.trim();
   };
   const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");

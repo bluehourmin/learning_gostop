@@ -1287,16 +1287,6 @@ button {
   margin: 22px 0 34px;
 }
 
-.opponent-rot-cw .card-visual {
-  transform: rotate(90deg);
-  transform-origin: center;
-}
-
-.opponent-rot-ccw .card-visual {
-  transform: rotate(-90deg);
-  transform-origin: center;
-}
-
 .left-seat .captured-strip .card-shell.small,
 .right-seat .captured-strip .card-shell.small {
   transform: none;
