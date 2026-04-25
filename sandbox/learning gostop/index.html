@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고스돕 튜터 테이블 - 쉽게 배우는 고스톱</title>
+  <meta name="description" content="고스톱 규칙을 쉽게 배우는 튜터링 사이트. 3인 연습판에서 실제 판처럼 카드를 내며 고스톱을 익혀보세요.">
+  <meta name="keywords" content="고스톱, 고스톱 배우기, 고스톱 규칙, 화투, 고스돕 튜터">
+  <meta property="og:title" content="고스돕 튜터 테이블 - 쉽게 배우는 고스톱">
+  <meta property="og:description" content="고스톱 규칙을 쉽게 배우는 튜터링 사이트. 3인 연습판에서 실제 판처럼 카드를 내며 고스톱을 익혀보세요.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=SUIT:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">3인 튜터링 판 · 표준룰 우선 · 조커는 옵션</p>
+        <h1>고스돕 튜터 테이블</h1>
+        <p class="hero-copy">
+          표준 고스돕 룰을 우선 기준으로 두고 흐름을 읽는 연습판입니다.
+          내가 카드를 낼 때마다 가이드가 바뀌고, 다음 사람 차례까지 실제 판처럼 이어집니다.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button id="new-game-btn" class="primary">새 판 시작</button>
+        <button id="advisor-toggle-btn" class="ghost">추천만 보기</button>
+        <button id="joker-toggle-btn" class="ghost">조커 켜짐</button>
+      </div>
+    </header>
+    <main class="layout">
+      <section class="table-panel">
+        <div class="table-topbar">
+          <span id="turn-badge" class="badge">내 차례</span>
+          <span id="deck-count" class="badge subtle"></span>
+        </div>
+        <div class="table-meta">
+          <span id="dealer-badge" class="badge subtle"></span>
+          <span id="direction-badge" class="badge subtle"></span>
+        </div>
+        <div class="pace-bar">
+          <div class="pace-buttons">
+            <button id="pace-slow-btn" class="pace-btn active">천천히</button>
+            <button id="pace-normal-btn" class="pace-btn">보통</button>
+            <button id="pace-step-btn" class="pace-btn">한 턴씩</button>
+          </div>
+          <button id="next-turn-btn" class="pace-btn next-btn" disabled>다음 턴 보기</button>
+        </div>
+        <div class="table-board">
+          <aside id="left-seat" class="seat side-seat"></aside>
+          <section class="field-zone">
+            <div class="field-header">
+              <h2>바닥패</h2>
+              <p id="field-read" class="field-read"></p>
+            </div>
+            <div id="field-area" class="field-area"></div>
+            <div class="stock-wrap">
+              <div id="stock-pile" class="stock-pile" aria-hidden="true"></div>
+              <p class="stock-label">뒤집을 패</p>
+            </div>
+          </section>
+          <aside id="right-seat" class="seat side-seat"></aside>
+          <section id="user-seat" class="seat user-seat"></section>
+        </div>
+      </section>
+      <section class="sidebar">
+        <section class="panel tutor-panel">
+          <div class="panel-heading">
+            <h2>튜터</h2>
+          </div>
+          <div id="tutor-summary" class="tutor-summary"></div>
+          <div id="recommendation-list" class="recommendation-list"></div>
+          <div class="insight-grid">
+            <article>
+              <h3>흐름</h3>
+              <p id="flow-insight"></p>
+            </article>
+            <article>
+              <h3>위험</h3>
+              <p id="risk-insight"></p>
+            </article>
+            <article>
+              <h3>기술 포인트</h3>
+              <p id="skill-insight"></p>
+            </article>
+          </div>
+        </section>
+        <section class="panel chat-panel">
+          <div class="panel-heading">
+            <h2>코치와 상의</h2>
+          </div>
+          <div id="chat-log" class="chat-log"></div>
+          <form id="chat-form" class="chat-form">
+            <input id="chat-input" class="chat-input" type="text" placeholder="예: 지금 왜 이 카드가 1순위야?" />
+            <button class="primary chat-send" type="submit">보내기</button>
+          </form>
+        </section>
+        <section class="panel log-panel">
+          <div class="panel-heading">
+            <h2>해설 로그</h2>
+          </div>
+          <div id="event-log" class="event-log"></div>
+        </section>
+        <details class="panel rules-panel compact-rules">
+          <summary class="panel-heading compact-rules-summary">
+            <h2>룰 기준</h2>
+          </summary>
+          <div id="rules-summary" class="rules-summary"></div>
+        </details>
+      </section>
+    </main>
+  </div>
+  <script src="./script.js"></script>
+</body>
+</html>
