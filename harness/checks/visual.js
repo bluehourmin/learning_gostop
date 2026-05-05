@@ -90,6 +90,34 @@ function runVisualChecks({ files }) {
       script.includes('opponent-rot-cw') && script.includes('opponent-rot-ccw') && styles.includes('.opponent-rot-cw') && styles.includes('.opponent-rot-ccw'),
       '상대 회전 클래스가 script 와 styles 양쪽에 있어야 한다.',
       'opponent-rot-cw / opponent-rot-ccw 클래스를 script 와 styles 양쪽에서 유지하세요.'
+    ),
+    makeCheck(
+      'opponent_compact_layout_contract',
+      '상대 먹은 패는 좌석별 3행 계약으로 배치된다',
+      4,
+      styles.includes('.left-seat .opponent-captured-strip .captured-layout')
+        && styles.includes('.right-seat .opponent-captured-strip .captured-layout')
+        && styles.includes('grid-template-areas:')
+        && styles.includes('"bright bright"')
+        && styles.includes('"junk junk"'),
+      '상대 먹은 패는 A/B 좌석 모두 밝은 패/중간 줄/피 줄의 3행 계약을 가져야 한다.',
+      'opponent-captured-strip 아래 captured-layout 을 좌석별 3행 grid-template-areas 계약으로 유지하세요.'
+    ),
+    makeCheck(
+      'opponent_middle_sideways_contract',
+      '상대 띠·열끗 칸은 좌우로 펴진다',
+      3,
+      /\.left-seat \.opponent-captured-strip \.captured-middle\s*,[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\);/s.test(styles),
+      '상대 가운데 줄은 내 공개패를 90도 돌린 느낌으로 띠와 열끗이 좌우로 펴져야 한다.',
+      '상대 captured-middle 에 2열 grid-template-columns 계약을 유지하세요.'
+    ),
+    makeCheck(
+      'opponent_no_translate_hacks',
+      '상대 먹은 패는 좌우 미세 translate 보정 없이 정리된다',
+      3,
+      !/\.left-seat \.opponent-captured-strip \.captured-bright\s*\{[^}]*transform:/s.test(styles) && !/\.right-seat \.opponent-captured-strip \.captured-bright\s*\{[^}]*transform:/s.test(styles),
+      '상대 광 칸을 좌우별 transform 으로 따로 밀지 않아야 한다.',
+      '상대 먹은 패 정리는 translateY 같은 좌석별 미세 보정을 제거하세요.'
     )
   ];
 

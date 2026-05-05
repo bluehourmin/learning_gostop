@@ -855,6 +855,17 @@ function sortFieldCards(cards) {
   });
 }
 
+function sortCapturedCategory(cards) {
+  return [...cards].sort((a, b) => {
+    const monthA = a.month || 99;
+    const monthB = b.month || 99;
+    if (monthA !== monthB) return monthA - monthB;
+    const valueDiff = getJunkValue(b) - getJunkValue(a);
+    if (valueDiff !== 0) return valueDiff;
+    return a.label.localeCompare(b.label, 'ko');
+  });
+}
+
 function groupCapturedCards(cards) {
   const bright = [];
   const animal = [];
@@ -904,16 +915,22 @@ function groupCapturedCards(cards) {
 
   junkRows.sort((a, b) => a.value - b.value || a.cards.length - b.cards.length);
 
-  return { bright, animal, ribbon, junkRows: junkRows.map((row) => row.cards) };
+  return {
+    bright: sortCapturedCategory(bright),
+    animal: sortCapturedCategory(animal),
+    ribbon: sortCapturedCategory(ribbon),
+    junkRows: junkRows.map((row) => row.cards)
+  };
 }
 
 function renderCapturedLayout(cards, options = {}) {
   const motion = app.state?.motion || createMotionState();
   const compact = options.compact === true;
+  const seatRotationClass = options.seat === 1 ? " opponent-rot-cw" : options.seat === 2 ? " opponent-rot-ccw" : "";
   const groups = groupCapturedCards(cards);
   const buildExtraClass = (card) => {
     const motionClass = motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "";
-    return motionClass.trim();
+    return (motionClass + seatRotationClass).trim();
   };
   const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");

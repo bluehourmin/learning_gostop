@@ -1287,9 +1287,14 @@ button {
   margin: 22px 0 34px;
 }
 
-.left-seat .captured-strip .card-shell.small,
-.right-seat .captured-strip .card-shell.small {
-  transform: none;
+.opponent-rot-cw .card-visual {
+  transform: rotate(90deg);
+  transform-origin: center;
+}
+
+.opponent-rot-ccw .card-visual {
+  transform: rotate(-90deg);
+  transform-origin: center;
 }
 
 .left-seat .captured-bright,
@@ -1391,18 +1396,27 @@ button {
   transform-origin: center;
 }
 
-.public-zone.left-public {
-  transform: rotate(90deg);
-}
-
-.public-zone.right-public {
-  transform: rotate(-90deg);
-}
-
 .left-seat .opponent-captured-strip .captured-layout,
 .right-seat .opponent-captured-strip .captured-layout {
   min-width: 246px;
-  grid-template-columns: minmax(0, 0.72fr) minmax(0, 0.94fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.left-seat .opponent-captured-strip .captured-layout {
+  grid-template-areas:
+    "bright bright"
+    "middle middle"
+    "junk junk";
+  align-items: start;
+}
+
+.right-seat .opponent-captured-strip .captured-layout {
+  grid-template-areas:
+    "junk junk"
+    "middle middle"
+    "bright bright";
+  align-items: start;
 }
 
 .left-seat .opponent-captured-strip .captured-bright,
@@ -1414,26 +1428,34 @@ button {
 .right-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-junk {
   min-height: 60px;
+  transform: none;
 }
 
-.left-seat .opponent-captured-strip .captured-bright {
-  transform: translateY(-16px);
-}
-
+.left-seat .opponent-captured-strip .captured-bright,
 .right-seat .opponent-captured-strip .captured-bright {
-  transform: translateY(16px);
+  grid-area: bright;
+}
+
+.left-seat .opponent-captured-strip .captured-middle,
+.right-seat .opponent-captured-strip .captured-middle {
+  grid-area: middle;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-content: start;
 }
 
 .left-seat .opponent-captured-strip .captured-ribbon,
 .left-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-ribbon,
 .right-seat .opponent-captured-strip .captured-animal {
-  min-width: 82px;
+  min-width: 0;
 }
 
 .left-seat .opponent-captured-strip .captured-junk,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-width: 106px;
+  grid-area: junk;
+  min-width: 0;
   min-height: 124px;
 }
 
@@ -2251,7 +2273,24 @@ body.viewport-warned .viewport-overlay__panel {
   .left-seat .opponent-captured-strip .captured-layout,
   .right-seat .opponent-captured-strip .captured-layout {
     min-width: 188px;
-    grid-template-columns: minmax(0, 0.74fr) minmax(0, 0.94fr) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .left-seat .opponent-captured-strip .captured-layout {
+    grid-template-areas:
+      "bright bright"
+      "middle middle"
+      "junk junk";
+    align-items: start;
+  }
+
+  .right-seat .opponent-captured-strip .captured-layout {
+    grid-template-areas:
+      "junk junk"
+      "middle middle"
+      "bright bright";
+    align-items: start;
   }
 
   .left-seat .opponent-captured-strip .captured-bright,
@@ -2263,26 +2302,34 @@ body.viewport-warned .viewport-overlay__panel {
   .right-seat .opponent-captured-strip .captured-animal,
   .right-seat .opponent-captured-strip .captured-junk {
     min-height: 48px;
+    transform: none;
   }
 
-  .left-seat .opponent-captured-strip .captured-bright {
-    transform: translateY(-10px);
-  }
-
+  .left-seat .opponent-captured-strip .captured-bright,
   .right-seat .opponent-captured-strip .captured-bright {
-    transform: translateY(10px);
+    grid-area: bright;
+  }
+
+  .left-seat .opponent-captured-strip .captured-middle,
+  .right-seat .opponent-captured-strip .captured-middle {
+    grid-area: middle;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    align-content: start;
   }
 
   .left-seat .opponent-captured-strip .captured-ribbon,
   .left-seat .opponent-captured-strip .captured-animal,
   .right-seat .opponent-captured-strip .captured-ribbon,
   .right-seat .opponent-captured-strip .captured-animal {
-    min-width: 66px;
+    min-width: 0;
   }
 
   .left-seat .opponent-captured-strip .captured-junk,
   .right-seat .opponent-captured-strip .captured-junk {
-    min-width: 84px;
+    grid-area: junk;
+    min-width: 0;
     min-height: 96px;
   }
 
