@@ -34,8 +34,11 @@
       "상대 공개패는 A 시계 90도, B 반시계 90도로 보이게 한다"
     ],
     "codePatterns": [
-      "opponent-rot-cw",
-      "opponent-rot-ccw"
+      "seatRotationClass",
+      ".left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw",
+      "rotate: 90deg;",
+      ".right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw",
+      "rotate: -90deg;"
     ]
   },
   {
