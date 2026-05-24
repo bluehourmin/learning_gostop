@@ -1287,6 +1287,21 @@ button {
   margin: 22px 0 34px;
 }
 
+.opponent-rot-cw .card-visual {
+  transform: rotate(90deg);
+  transform-origin: center;
+}
+
+.opponent-rot-ccw .card-visual {
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.left-seat .captured-strip .card-shell.small,
+.right-seat .captured-strip .card-shell.small {
+  transform: none;
+}
+
 .left-seat .captured-bright,
 .left-seat .captured-ribbon,
 .left-seat .captured-animal,
@@ -1384,27 +1399,20 @@ button {
   width: 256px;
   min-height: 208px;
   transform-origin: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw {
-  rotate: 90deg;
-  transform-origin: center;
+.public-zone.left-public {
+  transform: rotate(90deg);
 }
 
-.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
-  rotate: -90deg;
-  transform-origin: center;
+.public-zone.right-public {
+  transform: rotate(-90deg);
 }
 
 .left-seat .opponent-captured-strip .captured-layout,
 .right-seat .opponent-captured-strip .captured-layout {
   min-width: 246px;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 0.94fr) minmax(0, 1fr);
-  gap: 6px;
-  align-items: start;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 0.94fr) minmax(0, 1fr);
 }
 
 .left-seat .opponent-captured-strip .captured-bright,
@@ -1416,7 +1424,27 @@ button {
 .right-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-junk {
   min-height: 60px;
-  transform: none;
+}
+
+.left-seat .opponent-captured-strip .captured-bright {
+  transform: translateY(-16px);
+}
+
+.right-seat .opponent-captured-strip .captured-bright {
+  transform: translateY(16px);
+}
+
+.left-seat .opponent-captured-strip .captured-ribbon,
+.left-seat .opponent-captured-strip .captured-animal,
+.right-seat .opponent-captured-strip .captured-ribbon,
+.right-seat .opponent-captured-strip .captured-animal {
+  min-width: 82px;
+}
+
+.left-seat .opponent-captured-strip .captured-junk,
+.right-seat .opponent-captured-strip .captured-junk {
+  min-width: 106px;
+  min-height: 124px;
 }
 
 
@@ -2228,27 +2256,12 @@ body.viewport-warned .viewport-overlay__panel {
   .public-zone.right-public {
     width: 198px;
     min-height: 164px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw {
-    rotate: 90deg;
-    transform-origin: center;
-  }
-
-  .right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
-    rotate: -90deg;
-    transform-origin: center;
   }
 
   .left-seat .opponent-captured-strip .captured-layout,
   .right-seat .opponent-captured-strip .captured-layout {
     min-width: 188px;
-    grid-template-columns: minmax(0, 0.76fr) minmax(0, 0.92fr) minmax(0, 1fr);
-    gap: 4px;
-    align-items: start;
+    grid-template-columns: minmax(0, 0.74fr) minmax(0, 0.94fr) minmax(0, 1fr);
   }
 
   .left-seat .opponent-captured-strip .captured-bright,
@@ -2260,7 +2273,27 @@ body.viewport-warned .viewport-overlay__panel {
   .right-seat .opponent-captured-strip .captured-animal,
   .right-seat .opponent-captured-strip .captured-junk {
     min-height: 48px;
-    transform: none;
+  }
+
+  .left-seat .opponent-captured-strip .captured-bright {
+    transform: translateY(-10px);
+  }
+
+  .right-seat .opponent-captured-strip .captured-bright {
+    transform: translateY(10px);
+  }
+
+  .left-seat .opponent-captured-strip .captured-ribbon,
+  .left-seat .opponent-captured-strip .captured-animal,
+  .right-seat .opponent-captured-strip .captured-ribbon,
+  .right-seat .opponent-captured-strip .captured-animal {
+    min-width: 66px;
+  }
+
+  .left-seat .opponent-captured-strip .captured-junk,
+  .right-seat .opponent-captured-strip .captured-junk {
+    min-width: 84px;
+    min-height: 96px;
   }
 
   .captured-layout {

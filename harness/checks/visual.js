@@ -85,11 +85,44 @@ function runVisualChecks({ files }) {
     ),
     makeCheck(
       'opponent_rotation_tokens',
-      '상대 A/B 90도 방향 규칙 토큰이 코드/스타일에 존재한다',
+      '상대 A/B는 내 공개패와 같은 정리 위에서 카드만 90도 회전한다',
+      4,
+      script.includes('seatRotationClass')
+        && styles.includes('.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw')
+        && styles.includes('rotate: 90deg;')
+        && styles.includes('.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw')
+        && styles.includes('rotate: -90deg;'),
+      '상대 회전은 공개패 블록 전체가 아니라 카드 방향감에만 적용되어야 한다.',
+      'seatRotationClass 기반 카드별 90도 회전을 유지하고, compact-opponent 전체 회전은 제거하세요.'
+    ),
+    makeCheck(
+      'opponent_same_layout_contract',
+      '상대 먹은 패는 내 먹은 패와 같은 3열 구조를 유지한다',
+      4,
+      /\.left-seat \.opponent-captured-strip \.captured-layout\s*,[\s\S]*grid-template-columns:\s*minmax\(0, 0\.82fr\) minmax\(0, 0\.94fr\) minmax\(0, 1fr\);/s.test(styles)
+        || /\.left-seat \.opponent-captured-strip \.captured-layout\s*,[\s\S]*grid-template-columns:\s*minmax\(0, 0\.76fr\) minmax\(0, 0\.92fr\) minmax\(0, 1fr\);/s.test(styles),
+      '상대 먹은 패도 내 먹은 패와 같은 광/중간/피 3열 구조를 유지해야 한다.',
+      '상대 captured-layout 에 별도 2열/3행 재배치 대신 내 공개패와 같은 3열 grid-template-columns 계약을 유지하세요.'
+    ),
+    makeCheck(
+      'opponent_no_layout_reordering',
+      '상대 먹은 패는 좌석별로 광/띠/열끗/피 순서를 다시 짜지 않는다',
       3,
-      script.includes('opponent-rot-cw') && script.includes('opponent-rot-ccw') && styles.includes('.opponent-rot-cw') && styles.includes('.opponent-rot-ccw'),
-      '상대 회전 클래스가 script 와 styles 양쪽에 있어야 한다.',
-      'opponent-rot-cw / opponent-rot-ccw 클래스를 script 와 styles 양쪽에서 유지하세요.'
+      !styles.includes('grid-template-areas:')
+        && !styles.includes('.left-seat .public-zone.left-public .captured-layout.compact-opponent')
+        && !styles.includes('.right-seat .public-zone.right-public .captured-layout.compact-opponent')
+        && !script.includes('orderedJunkRows')
+        && !script.includes('middleBlocks'),
+      '상대 먹은 패는 레이아웃 순서를 바꾸지 않고 내 공개패와 같은 쌓임을 유지해야 한다.',
+      '상대 전용 행 재배치, junk row 역순, middleBlocks 분기, compact-opponent 전체 회전을 제거하세요.'
+    ),
+    makeCheck(
+      'opponent_no_translate_hacks',
+      '상대 먹은 패는 좌우 미세 translate 보정 없이 정리된다',
+      3,
+      !/\.left-seat \.opponent-captured-strip \.captured-bright\s*\{[^}]*transform:/s.test(styles) && !/\.right-seat \.opponent-captured-strip \.captured-bright\s*\{[^}]*transform:/s.test(styles),
+      '상대 광 칸을 좌우별 transform 으로 따로 밀지 않아야 한다.',
+      '상대 먹은 패 정리는 translateY 같은 좌석별 미세 보정을 제거하세요.'
     )
   ];
 

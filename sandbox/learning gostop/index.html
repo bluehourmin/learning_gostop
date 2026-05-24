@@ -9,6 +9,14 @@
   <meta property="og:title" content="고스돕 튜터 테이블 - 쉽게 배우는 고스톱">
   <meta property="og:description" content="고스톱 규칙을 쉽게 배우는 튜터링 사이트. 3인 연습판에서 실제 판처럼 카드를 내며 고스톱을 익혀보세요.">
   <meta property="og:type" content="website">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-79SXP5F4W4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-79SXP5F4W4');
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=SUIT:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -16,39 +24,24 @@
 </head>
 <body>
   <div class="app-shell">
-    <header class="hero">
-      <div>
-        <p class="eyebrow">3인 튜터링 판 · 표준룰 우선 · 조커는 옵션</p>
+    <header class="hero compact-hero">
+      <div class="hero-brand">
         <h1>고스돕 튜터 테이블</h1>
-        <p class="hero-copy">
-          표준 고스돕 룰을 우선 기준으로 두고 흐름을 읽는 연습판입니다.
-          내가 카드를 낼 때마다 가이드가 바뀌고, 다음 사람 차례까지 실제 판처럼 이어집니다.
-        </p>
+        <div class="hero-meta-line" aria-label="게임 기준">
+          <span class="hero-chip">3인 튜터링 판</span>
+          <span class="hero-chip">표준룰 우선</span>
+          <span class="hero-chip">조커 옵션</span>
+        </div>
       </div>
       <div class="hero-actions">
         <button id="new-game-btn" class="primary">새 판 시작</button>
         <button id="advisor-toggle-btn" class="ghost">추천만 보기</button>
         <button id="joker-toggle-btn" class="ghost">조커 켜짐</button>
+        <button id="reference-open-btn" class="ghost">전체 패 보기</button>
       </div>
     </header>
     <main class="layout">
       <section class="table-panel">
-        <div class="table-topbar">
-          <span id="turn-badge" class="badge">내 차례</span>
-          <span id="deck-count" class="badge subtle"></span>
-        </div>
-        <div class="table-meta">
-          <span id="dealer-badge" class="badge subtle"></span>
-          <span id="direction-badge" class="badge subtle"></span>
-        </div>
-        <div class="pace-bar">
-          <div class="pace-buttons">
-            <button id="pace-slow-btn" class="pace-btn active">천천히</button>
-            <button id="pace-normal-btn" class="pace-btn">보통</button>
-            <button id="pace-step-btn" class="pace-btn">한 턴씩</button>
-          </div>
-          <button id="next-turn-btn" class="pace-btn next-btn" disabled>다음 턴 보기</button>
-        </div>
         <div class="table-board">
           <aside id="left-seat" class="seat side-seat"></aside>
           <section class="field-zone">
@@ -67,28 +60,60 @@
         </div>
       </section>
       <section class="sidebar">
-        <section class="panel tutor-panel">
+        <section class="panel status-panel">
+          <div class="panel-heading">
+            <h2>상태</h2>
+          </div>
+          <div class="table-topbar sidebar-topbar">
+            <span id="turn-badge" class="badge">내 차례</span>
+            <span id="deck-count" class="badge subtle"></span>
+          </div>
+          <div class="table-meta sidebar-meta">
+            <span id="dealer-badge" class="badge subtle"></span>
+            <span id="direction-badge" class="badge subtle"></span>
+          </div>
+          <div class="pace-bar sidebar-pace-bar">
+            <div class="pace-buttons sidebar-pace-buttons">
+              <button id="pace-slow-btn" class="pace-btn active">천천히</button>
+              <button id="pace-normal-btn" class="pace-btn">보통</button>
+              <button id="pace-step-btn" class="pace-btn">한 턴씩</button>
+            </div>
+            <button id="next-turn-btn" class="pace-btn next-btn" disabled>다음 턴 보기</button>
+          </div>
+        </section>
+        <nav class="sidebar-tabs" aria-label="모바일 사이드바 탭">
+          <button type="button" class="sidebar-tab active" data-sidebar-tab="tutor">튜터</button>
+          <button type="button" class="sidebar-tab" data-sidebar-tab="coach">코치</button>
+          <button type="button" class="sidebar-tab" data-sidebar-tab="log">로그</button>
+          <button type="button" class="sidebar-tab" data-sidebar-tab="rules">룰</button>
+        </nav>
+        <section class="panel tutor-panel" data-panel="tutor">
           <div class="panel-heading">
             <h2>튜터</h2>
           </div>
           <div id="tutor-summary" class="tutor-summary"></div>
+          <div id="warning-strip" class="warning-strip"></div>
           <div id="recommendation-list" class="recommendation-list"></div>
           <div class="insight-grid">
+            <article>
+              <h3>내 체크</h3>
+              <p id="strategy-insight"></p>
+            </article>
             <article>
               <h3>흐름</h3>
               <p id="flow-insight"></p>
             </article>
-            <article>
+            <article id="risk-card">
               <h3>위험</h3>
               <p id="risk-insight"></p>
             </article>
             <article>
-              <h3>기술 포인트</h3>
+              <h3>상대 체크</h3>
               <p id="skill-insight"></p>
             </article>
           </div>
         </section>
-        <section class="panel chat-panel">
+        <section class="panel chat-panel" data-panel="coach">
           <div class="panel-heading">
             <h2>코치와 상의</h2>
           </div>
@@ -98,13 +123,13 @@
             <button class="primary chat-send" type="submit">보내기</button>
           </form>
         </section>
-        <section class="panel log-panel">
+        <section class="panel log-panel" data-panel="log">
           <div class="panel-heading">
             <h2>해설 로그</h2>
           </div>
           <div id="event-log" class="event-log"></div>
         </section>
-        <details class="panel rules-panel compact-rules">
+        <details class="panel rules-panel compact-rules" data-panel="rules">
           <summary class="panel-heading compact-rules-summary">
             <h2>룰 기준</h2>
           </summary>
@@ -112,6 +137,48 @@
         </details>
       </section>
     </main>
+  </div>
+  <div id="reference-modal" class="reference-modal" hidden>
+    <div class="reference-backdrop" data-close-reference="true"></div>
+    <section class="reference-dialog" role="dialog" aria-modal="true" aria-labelledby="reference-title">
+      <div class="reference-header">
+        <div>
+          <p class="reference-eyebrow">초보용 참고표</p>
+          <h2 id="reference-title">전체 고스돕 패 보기</h2>
+        </div>
+        <button class="match-close-btn reference-close-btn" type="button" aria-label="참고표 닫기" data-close-reference="true">x</button>
+      </div>
+      <div class="reference-legend">
+        <div class="reference-chip-group">
+          <strong>단줄</strong>
+          <span class="rules-tag basic">홍단 1·2·3월</span>
+          <span class="rules-tag basic">청단 6·9·10월</span>
+          <span class="rules-tag basic">초단 4·5·7월</span>
+        </div>
+        <div class="reference-chip-group">
+          <strong>특수줄</strong>
+          <span class="rules-tag basic">고도리 2·4·8 열끗</span>
+          <span class="rules-tag basic">9월 술잔 겸용</span>
+          <span class="rules-tag basic">12월 쌍피</span>
+        </div>
+      </div>
+      <p class="reference-guide">월별 4장을 빠르게 훑으면서 광, 단줄, 고도리, 겸용 여부만 먼저 익혀보세요.</p>
+      <div id="reference-grid" class="reference-grid"></div>
+    </section>
+  </div>
+  <div id="viewport-overlay" class="viewport-overlay" hidden>
+    <div class="viewport-overlay__backdrop"></div>
+    <section class="viewport-overlay__panel" role="dialog" aria-modal="true" aria-labelledby="viewport-title">
+      <p id="viewport-kicker" class="viewport-overlay__kicker">모바일 안내</p>
+      <h2 id="viewport-title">가로로 돌려주세요</h2>
+      <p id="viewport-message" class="viewport-overlay__message"></p>
+      <div id="viewport-device-tags" class="viewport-overlay__tags"></div>
+      <div class="viewport-overlay__actions">
+        <button id="viewport-refresh-btn" class="primary" type="button">다시 확인</button>
+        <button id="viewport-continue-btn" class="ghost" type="button" hidden>세로로 계속 보기</button>
+        <button id="viewport-reference-btn" class="ghost" type="button">전체 패 보기</button>
+      </div>
+    </section>
   </div>
   <script src="./script.js"></script>
 </body>
