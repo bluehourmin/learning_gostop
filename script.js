@@ -923,6 +923,48 @@ function groupCapturedCards(cards) {
   };
 }
 
+function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
+  const sideClass = seat === 1 ? " opponent-layout-a" : " opponent-layout-b";
+  const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
+  const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
+  const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
+  const junkHtml = groups.junkRows.map((row) => {
+    const rowValue = row.reduce((sum, card) => sum + getJunkValue(card), 0);
+    return `
+      <div class="opponent-capture-stack opponent-junk-stack">
+        <span class="opponent-stack-label">피 ${rowValue}</span>
+        ${row.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) + (getJunkValue(card) >= 2 ? " junk-double" : "") })).join("")}
+      </div>
+    `;
+  }).join("");
+  const brightBlock = `
+    <div class="opponent-capture-slot opponent-bright-slot${brightHtml ? "" : " is-empty"}">
+      <div class="opponent-capture-stack">${brightHtml}</div>
+    </div>
+  `;
+  const middleBlock = `
+    <div class="opponent-capture-middle${(!ribbonHtml && !animalHtml) ? " is-empty" : ""}">
+      <div class="opponent-capture-slot opponent-ribbon-slot${ribbonHtml ? "" : " is-empty"}">
+        <div class="opponent-capture-stack">${ribbonHtml}</div>
+      </div>
+      <div class="opponent-capture-slot opponent-animal-slot${animalHtml ? "" : " is-empty"}">
+        <div class="opponent-capture-stack">${animalHtml}</div>
+      </div>
+    </div>
+  `;
+  const junkBlock = `
+    <div class="opponent-capture-slot opponent-junk-slot${junkHtml ? "" : " is-empty"}">
+      ${junkHtml}
+    </div>
+  `;
+  const rows = seat === 1 ? [brightBlock, middleBlock, junkBlock] : [junkBlock, middleBlock, brightBlock];
+  return `
+    <div class="opponent-captured-layout${sideClass}">
+      ${rows.join("")}
+    </div>
+  `;
+}
+
 function renderCapturedLayout(cards, options = {}) {
   const motion = app.state?.motion || createMotionState();
   const compact = options.compact === true;
@@ -932,6 +974,9 @@ function renderCapturedLayout(cards, options = {}) {
     const motionClass = motion.capturedIds.includes(card.id) ? ` motion-capture-pop motion-seat-${motion.seat}` : "";
     return (seatRotationClass + motionClass).trim();
   };
+  if (compact && (options.seat === 1 || options.seat === 2)) {
+    return renderOpponentCapturedLayout(groups, buildExtraClass, options.seat);
+  }
   const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
   const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");

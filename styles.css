@@ -1384,26 +1384,161 @@ button {
   width: 256px;
   min-height: 208px;
   transform-origin: center;
+}
+
+.opponent-rot-cw .card-visual {
+  transform: rotate(90deg);
+  transform-origin: center;
+}
+
+.opponent-rot-ccw .card-visual {
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.opponent-captured-layout {
+  width: 206px;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 8px;
+  align-content: center;
+}
+
+.opponent-capture-middle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.opponent-capture-slot {
+  min-width: 0;
+  min-height: 54px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.opponent-bright-slot,
+.opponent-junk-slot {
+  width: 88px;
+}
+
+.opponent-junk-slot {
+  width: 100%;
+}
+
+.opponent-layout-a .opponent-bright-slot,
+.opponent-layout-a .opponent-junk-slot {
+  justify-self: end;
+}
+
+.opponent-layout-b .opponent-bright-slot,
+.opponent-layout-b .opponent-junk-slot {
+  justify-self: start;
+}
+
+.opponent-capture-slot.is-empty,
+.opponent-capture-middle.is-empty {
+  min-height: 0;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+.opponent-capture-stack {
+  position: relative;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.opponent-junk-slot {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-content: flex-start;
+  justify-content: flex-end;
+  gap: 5px 4px;
+  min-height: 104px;
+}
+
+.opponent-layout-b .opponent-junk-slot {
+  justify-content: flex-start;
+  flex-direction: row-reverse;
+}
+
+.opponent-stack-label {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 244, 226, 0.82);
+}
+
+.opponent-layout-b .opponent-stack-label {
+  left: auto;
+  right: 0;
+}
+
+.opponent-captured-layout .card-shell.small {
+  width: 56px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw {
-  rotate: 90deg;
-  transform-origin: center;
+.opponent-captured-layout .card-shell.small .card-visual {
+  width: 42px;
+  flex: 0 0 auto;
 }
 
-.right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
-  rotate: -90deg;
-  transform-origin: center;
+.opponent-junk-stack {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  width: max-content;
+  max-width: 100%;
+}
+
+.opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
+  margin-left: -39px;
+}
+
+.opponent-layout-b .opponent-capture-stack {
+  flex-direction: row-reverse;
+}
+
+.opponent-layout-b .opponent-capture-stack .card-shell.small + .card-shell.small {
+  margin-right: -39px;
 }
 
 .left-seat .opponent-captured-strip .captured-layout,
 .right-seat .opponent-captured-strip .captured-layout {
-  min-width: 246px;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 0.94fr) minmax(0, 1fr);
-  gap: 6px;
+  width: 154px;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.left-seat .opponent-captured-strip .captured-layout {
+  grid-template-areas:
+    "bright bright"
+    "middle middle"
+    "junk junk";
+  align-items: start;
+}
+
+.right-seat .opponent-captured-strip .captured-layout {
+  grid-template-areas:
+    "junk junk"
+    "middle middle"
+    "bright bright";
   align-items: start;
 }
 
@@ -1415,8 +1550,93 @@ button {
 .right-seat .opponent-captured-strip .captured-ribbon,
 .right-seat .opponent-captured-strip .captured-animal,
 .right-seat .opponent-captured-strip .captured-junk {
-  min-height: 60px;
+  min-height: 44px;
+  padding: 4px;
+  border-radius: 10px;
   transform: none;
+}
+
+.left-seat .opponent-captured-strip .card-shell.small,
+.right-seat .opponent-captured-strip .card-shell.small {
+  width: 56px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.left-seat .opponent-captured-strip .card-shell.small .card-visual,
+.right-seat .opponent-captured-strip .card-shell.small .card-visual {
+  width: 42px;
+  flex: 0 0 auto;
+}
+
+.left-seat .opponent-captured-strip .captured-bright,
+.right-seat .opponent-captured-strip .captured-bright {
+  grid-area: bright;
+}
+
+.left-seat .opponent-captured-strip .captured-middle,
+.right-seat .opponent-captured-strip .captured-middle {
+  grid-area: middle;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  align-content: start;
+}
+
+.left-seat .opponent-captured-strip .captured-ribbon,
+.left-seat .opponent-captured-strip .captured-animal,
+.right-seat .opponent-captured-strip .captured-ribbon,
+.right-seat .opponent-captured-strip .captured-animal {
+  min-width: 0;
+}
+
+.left-seat .opponent-captured-strip .captured-junk,
+.right-seat .opponent-captured-strip .captured-junk {
+  grid-area: junk;
+  min-width: 0;
+  min-height: 78px;
+  gap: 4px;
+  justify-content: flex-start;
+}
+
+.left-seat .opponent-captured-strip .captured-junk-row,
+.right-seat .opponent-captured-strip .captured-junk-row,
+.left-seat .opponent-captured-strip .captured-bright,
+.left-seat .opponent-captured-strip .captured-ribbon,
+.left-seat .opponent-captured-strip .captured-animal,
+.right-seat .opponent-captured-strip .captured-bright,
+.right-seat .opponent-captured-strip .captured-ribbon,
+.right-seat .opponent-captured-strip .captured-animal {
+  justify-content: center;
+}
+
+.left-seat .opponent-captured-strip .captured-bright .card-shell.small + .card-shell.small,
+.left-seat .opponent-captured-strip .captured-ribbon .card-shell.small + .card-shell.small,
+.left-seat .opponent-captured-strip .captured-animal .card-shell.small + .card-shell.small,
+.left-seat .opponent-captured-strip .captured-junk-row .card-shell.small + .card-shell.small,
+.right-seat .opponent-captured-strip .captured-bright .card-shell.small + .card-shell.small,
+.right-seat .opponent-captured-strip .captured-ribbon .card-shell.small + .card-shell.small,
+.right-seat .opponent-captured-strip .captured-animal .card-shell.small + .card-shell.small,
+.right-seat .opponent-captured-strip .captured-junk-row .card-shell.small + .card-shell.small {
+  margin-left: -35px;
+}
+
+.left-seat .captured-layout.compact-opponent .captured-bright.is-empty,
+.left-seat .captured-layout.compact-opponent .captured-ribbon.is-empty,
+.left-seat .captured-layout.compact-opponent .captured-animal.is-empty,
+.left-seat .captured-layout.compact-opponent .captured-junk.is-empty,
+.right-seat .captured-layout.compact-opponent .captured-bright.is-empty,
+.right-seat .captured-layout.compact-opponent .captured-ribbon.is-empty,
+.right-seat .captured-layout.compact-opponent .captured-animal.is-empty,
+.right-seat .captured-layout.compact-opponent .captured-junk.is-empty {
+  min-height: 0;
+}
+
+.left-seat .captured-layout.compact-opponent .captured-middle.is-empty,
+.right-seat .captured-layout.compact-opponent .captured-middle.is-empty {
+  min-height: 0;
 }
 
 
@@ -2224,30 +2444,88 @@ body.viewport-warned .viewport-overlay__panel {
     min-height: 170px;
   }
 
+  .opponent-captured-layout {
+    width: 164px;
+    gap: 5px;
+  }
+
+  .opponent-capture-middle {
+    gap: 5px;
+  }
+
+  .opponent-capture-slot {
+    min-height: 44px;
+    padding: 3px;
+    border-radius: 9px;
+  }
+
+  .opponent-bright-slot,
+  .opponent-junk-slot {
+    width: 72px;
+  }
+
+  .opponent-junk-slot {
+    width: 100%;
+    min-height: 84px;
+    gap: 4px 3px;
+  }
+
+  .opponent-junk-stack {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .opponent-capture-stack {
+    min-height: 36px;
+    padding-top: 8px;
+  }
+
+  .opponent-captured-layout .card-shell.small {
+    width: 50px;
+    height: 36px;
+  }
+
+  .opponent-captured-layout .card-shell.small .card-visual {
+    width: 38px;
+  }
+
+  .opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
+    margin-left: -35px;
+  }
+
+  .opponent-layout-b .opponent-capture-stack .card-shell.small + .card-shell.small {
+    margin-right: -35px;
+  }
+
   .public-zone.left-public,
   .public-zone.right-public {
     width: 198px;
     min-height: 164px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .left-seat .opponent-captured-strip .card-shell.small.opponent-rot-cw {
-    rotate: 90deg;
-    transform-origin: center;
-  }
-
-  .right-seat .opponent-captured-strip .card-shell.small.opponent-rot-ccw {
-    rotate: -90deg;
-    transform-origin: center;
   }
 
   .left-seat .opponent-captured-strip .captured-layout,
   .right-seat .opponent-captured-strip .captured-layout {
-    min-width: 188px;
-    grid-template-columns: minmax(0, 0.76fr) minmax(0, 0.92fr) minmax(0, 1fr);
+    width: 132px;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
+  }
+
+  .left-seat .opponent-captured-strip .captured-layout {
+    grid-template-areas:
+      "bright bright"
+      "middle middle"
+      "junk junk";
+    align-items: start;
+  }
+
+  .right-seat .opponent-captured-strip .captured-layout {
+    grid-template-areas:
+      "junk junk"
+      "middle middle"
+      "bright bright";
     align-items: start;
   }
 
@@ -2259,8 +2537,73 @@ body.viewport-warned .viewport-overlay__panel {
   .right-seat .opponent-captured-strip .captured-ribbon,
   .right-seat .opponent-captured-strip .captured-animal,
   .right-seat .opponent-captured-strip .captured-junk {
-    min-height: 48px;
+    min-height: 38px;
+    padding: 3px;
+    border-radius: 9px;
     transform: none;
+  }
+
+  .left-seat .opponent-captured-strip .card-shell.small,
+  .right-seat .opponent-captured-strip .card-shell.small {
+    width: 50px;
+    height: 36px;
+  }
+
+  .left-seat .opponent-captured-strip .card-shell.small .card-visual,
+  .right-seat .opponent-captured-strip .card-shell.small .card-visual {
+    width: 38px;
+  }
+
+  .left-seat .opponent-captured-strip .captured-bright,
+  .right-seat .opponent-captured-strip .captured-bright {
+    grid-area: bright;
+  }
+
+  .left-seat .opponent-captured-strip .captured-middle,
+  .right-seat .opponent-captured-strip .captured-middle {
+    grid-area: middle;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    align-content: start;
+  }
+
+  .left-seat .opponent-captured-strip .captured-ribbon,
+  .left-seat .opponent-captured-strip .captured-animal,
+  .right-seat .opponent-captured-strip .captured-ribbon,
+  .right-seat .opponent-captured-strip .captured-animal {
+    min-width: 0;
+  }
+
+  .left-seat .opponent-captured-strip .captured-junk,
+  .right-seat .opponent-captured-strip .captured-junk {
+    grid-area: junk;
+    min-width: 0;
+    min-height: 66px;
+    gap: 3px;
+    justify-content: flex-start;
+  }
+
+  .left-seat .opponent-captured-strip .captured-junk-row,
+  .right-seat .opponent-captured-strip .captured-junk-row,
+  .left-seat .opponent-captured-strip .captured-bright,
+  .left-seat .opponent-captured-strip .captured-ribbon,
+  .left-seat .opponent-captured-strip .captured-animal,
+  .right-seat .opponent-captured-strip .captured-bright,
+  .right-seat .opponent-captured-strip .captured-ribbon,
+  .right-seat .opponent-captured-strip .captured-animal {
+    justify-content: center;
+  }
+
+  .left-seat .opponent-captured-strip .captured-bright .card-shell.small + .card-shell.small,
+  .left-seat .opponent-captured-strip .captured-ribbon .card-shell.small + .card-shell.small,
+  .left-seat .opponent-captured-strip .captured-animal .card-shell.small + .card-shell.small,
+  .left-seat .opponent-captured-strip .captured-junk-row .card-shell.small + .card-shell.small,
+  .right-seat .opponent-captured-strip .captured-bright .card-shell.small + .card-shell.small,
+  .right-seat .opponent-captured-strip .captured-ribbon .card-shell.small + .card-shell.small,
+  .right-seat .opponent-captured-strip .captured-animal .card-shell.small + .card-shell.small,
+  .right-seat .opponent-captured-strip .captured-junk-row .card-shell.small + .card-shell.small {
+    margin-left: -31px;
   }
 
   .captured-layout {
