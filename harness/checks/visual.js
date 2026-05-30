@@ -76,6 +76,15 @@ function runVisualChecks({ files }) {
       'captured 영역 small 카드 폭과 margin-left 를 조정해 30~40%가 보이게 하세요.'
     ),
     makeCheck(
+      'player_junk_stacks_from_bottom',
+      '내 피 묶음은 아래 첫 줄부터 쌓인다',
+      3,
+      hasBlockProperty(styles, '\.captured-junk', 'flex-direction', 'column-reverse')
+        && hasBlockProperty(styles, '\.captured-junk', 'justify-content', 'flex-end'),
+      '내 피 영역은 첫 피 줄이 아래쪽 기준선에 놓이고 다음 줄이 위로 올라가야 한다.',
+      'captured-junk 에 column-reverse 와 flex-end 바닥 정렬을 유지하세요.'
+    ),
+    makeCheck(
       'mobile_landscape_layout',
       '터치 기기 가로 화면 전용 레이아웃이 존재한다',
       4,
