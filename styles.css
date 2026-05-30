@@ -1407,6 +1407,10 @@ button {
   justify-content: center;
 }
 
+.opponent-layout-b {
+  grid-template-rows: 128px 86px 86px;
+}
+
 .opponent-capture-middle {
   display: grid;
   grid-column: 1 / -1;
@@ -2501,6 +2505,10 @@ body.viewport-warned .viewport-overlay__panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: 70px 70px 100px;
     gap: 5px;
+  }
+
+  .opponent-layout-b {
+    grid-template-rows: 100px 70px 70px;
   }
 
   .opponent-capture-middle {

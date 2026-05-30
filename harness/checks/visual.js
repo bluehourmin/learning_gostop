@@ -108,6 +108,7 @@ function runVisualChecks({ files }) {
         && script.includes('seat === 1 ? [brightBlock, middleBlock, junkBlock] : [junkBlock, middleBlock, brightBlock]')
         && styles.includes('.opponent-captured-layout')
         && styles.includes('grid-template-columns: repeat(2, minmax(0, 1fr));')
+        && styles.includes('.opponent-layout-b {\n  grid-template-rows: 128px 86px 86px;')
         && !script.includes('먹은 패 정리')
         && styles.includes('.opponent-layout-a')
         && styles.includes('.opponent-layout-b'),
