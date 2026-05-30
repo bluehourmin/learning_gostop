@@ -1467,8 +1467,8 @@ button {
 }
 
 .opponent-layout-b .opponent-junk-slot {
-  justify-content: flex-start;
-  flex-direction: row-reverse;
+  justify-content: flex-end;
+  flex-direction: row;
 }
 
 .opponent-stack-label {
@@ -1501,6 +1501,7 @@ button {
 .opponent-junk-stack {
   flex: 0 0 auto;
   flex-wrap: nowrap;
+  flex-direction: column;
   justify-content: flex-start;
   width: max-content;
   max-width: 100%;
@@ -1509,15 +1510,15 @@ button {
 }
 
 .opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
-  margin-left: -28px;
+  margin-top: -28px;
 }
 
 .opponent-layout-b .opponent-capture-stack {
-  flex-direction: row-reverse;
+  flex-direction: column-reverse;
 }
 
 .opponent-layout-b .opponent-capture-stack .card-shell.small + .card-shell.small {
-  margin-right: -28px;
+  margin-bottom: -28px;
 }
 
 .left-seat .opponent-captured-strip .captured-layout,
@@ -2494,11 +2495,11 @@ body.viewport-warned .viewport-overlay__panel {
   }
 
   .opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
-    margin-left: -24px;
+    margin-top: -24px;
   }
 
   .opponent-layout-b .opponent-capture-stack .card-shell.small + .card-shell.small {
-    margin-right: -24px;
+    margin-bottom: -24px;
   }
 
   .public-zone.left-public,

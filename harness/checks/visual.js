@@ -108,12 +108,12 @@ function runVisualChecks({ files }) {
       '상대 A/B 카드 전개 방향이 서로 반대다',
       3,
       styles.includes('.opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small')
-        && styles.includes('margin-left: -28px;')
+        && styles.includes('margin-top: -28px;')
         && styles.includes('.opponent-layout-b .opponent-capture-stack')
-        && styles.includes('flex-direction: row-reverse;')
-        && styles.includes('margin-right: -28px;'),
-      'A는 오른쪽으로, B는 왼쪽으로 카드가 약 30%만 보이게 겹쳐 전개되어야 한다.',
-      'opponent-layout-a/b 의 margin-left -28px, row-reverse, margin-right -28px 전개 규칙을 유지하세요.'
+        && styles.includes('flex-direction: column-reverse;')
+        && styles.includes('margin-bottom: -28px;'),
+      '내 화면 기준으로 A는 아래로, B는 위로 카드가 약 30%만 보이게 겹쳐 전개되어야 한다.',
+      'opponent-layout-a/b 의 margin-top -28px 와 B column-reverse/margin-bottom -28px 전개 규칙을 유지하세요.'
     ),
     makeCheck(
       'opponent_junk_bottom_wrap_contract',
