@@ -1400,20 +1400,25 @@ button {
   width: 206px;
   min-width: 0;
   display: grid;
-  grid-template-rows: auto auto auto;
+  grid-template-columns: repeat(2, 88px);
+  grid-template-rows: 80px 80px 112px;
   gap: 8px;
   align-content: center;
+  justify-content: center;
 }
 
 .opponent-capture-middle {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-column: 1 / -1;
+  grid-row: 2;
+  grid-template-columns: repeat(2, 88px);
   gap: 8px;
 }
 
 .opponent-capture-slot {
   min-width: 0;
   min-height: 76px;
+  width: 88px;
   padding: 4px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
@@ -1424,23 +1429,15 @@ button {
   justify-content: center;
 }
 
-.opponent-bright-slot,
-.opponent-junk-slot {
-  width: 88px;
+.opponent-bright-slot {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .opponent-junk-slot {
+  grid-column: 1 / -1;
+  grid-row: 3;
   width: 100%;
-}
-
-.opponent-layout-a .opponent-bright-slot,
-.opponent-layout-a .opponent-junk-slot {
-  justify-self: end;
-}
-
-.opponent-layout-b .opponent-bright-slot,
-.opponent-layout-b .opponent-junk-slot {
-  justify-self: start;
 }
 
 .opponent-capture-slot.is-empty,
@@ -1449,6 +1446,18 @@ button {
   padding: 0;
   border-color: transparent;
   background: transparent;
+}
+
+.opponent-captured-layout .opponent-capture-slot.is-empty,
+.opponent-captured-layout .opponent-capture-middle.is-empty {
+  min-height: 76px;
+  padding: 4px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.opponent-captured-layout .opponent-capture-middle.is-empty {
+  padding: 0;
 }
 
 .opponent-capture-stack {
@@ -1473,9 +1482,19 @@ button {
   min-height: 104px;
 }
 
+.opponent-layout-b .opponent-bright-slot {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.opponent-layout-b .opponent-capture-middle {
+  grid-row: 2;
+}
+
 .opponent-layout-b .opponent-junk-slot {
-  justify-content: flex-end;
+  grid-row: 1;
   flex-direction: row;
+  justify-content: flex-start;
 }
 
 .opponent-stack-label {
@@ -1525,6 +1544,14 @@ button {
 }
 
 .opponent-layout-a .opponent-junk-slot,
+.opponent-layout-b .opponent-junk-slot {
+  align-items: flex-start;
+}
+
+.opponent-layout-a .opponent-junk-slot {
+  justify-content: flex-start;
+}
+
 .opponent-layout-b .opponent-junk-slot {
   justify-content: flex-start;
 }
@@ -2469,22 +2496,21 @@ body.viewport-warned .viewport-overlay__panel {
 
   .opponent-captured-layout {
     width: 164px;
+    grid-template-columns: repeat(2, 72px);
+    grid-template-rows: 68px 68px 92px;
     gap: 5px;
   }
 
   .opponent-capture-middle {
+    grid-template-columns: repeat(2, 72px);
     gap: 5px;
   }
 
   .opponent-capture-slot {
     min-height: 64px;
+    width: 72px;
     padding: 3px;
     border-radius: 9px;
-  }
-
-  .opponent-bright-slot,
-  .opponent-junk-slot {
-    width: 72px;
   }
 
   .opponent-junk-slot {
@@ -2504,6 +2530,16 @@ body.viewport-warned .viewport-overlay__panel {
     min-height: 34px;
     width: 50px;
     padding-top: 8px;
+  }
+
+  .opponent-captured-layout .opponent-capture-slot.is-empty,
+  .opponent-captured-layout .opponent-capture-middle.is-empty {
+    min-height: 64px;
+    padding: 3px;
+  }
+
+  .opponent-captured-layout .opponent-capture-middle.is-empty {
+    padding: 0;
   }
 
   .opponent-captured-layout .card-shell.small {

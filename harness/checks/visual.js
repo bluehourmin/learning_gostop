@@ -98,10 +98,11 @@ function runVisualChecks({ files }) {
       script.includes('function renderOpponentCapturedLayout')
         && script.includes('seat === 1 ? [brightBlock, middleBlock, junkBlock] : [junkBlock, middleBlock, brightBlock]')
         && styles.includes('.opponent-captured-layout')
+        && styles.includes('grid-template-columns: repeat(2, 88px);')
         && styles.includes('.opponent-layout-a')
         && styles.includes('.opponent-layout-b'),
-      '상대 먹은 패는 A는 광-중간-피, B는 피-중간-광 순서로 실제 렌더링되어야 한다.',
-      'renderOpponentCapturedLayout 전용 구조와 opponent-layout-a/b 순서 계약을 유지하세요.'
+      '상대 먹은 패는 A는 광-중간-피, B는 피-중간-광 순서로 실제 렌더링되고, 처음부터 고정 2열 격자에 놓여야 한다.',
+      'renderOpponentCapturedLayout 전용 구조와 opponent-layout-a/b 고정 격자 계약을 유지하세요.'
     ),
     makeCheck(
       'opponent_directional_spread_contract',
@@ -126,10 +127,10 @@ function runVisualChecks({ files }) {
         && styles.includes('.opponent-junk-stack')
         && styles.includes('flex-wrap: nowrap;')
         && styles.includes('width: 58px;')
-        && script.includes('getJunkValue(a) - getJunkValue(b)')
+        && script.includes('const sortedJunk = [...junk];')
         && script.includes('captured-junk-row opponent-junk-stack'),
-      '상대 피 묶음은 고정 2열이 아니라 가용 폭에 맞춰 여러 열로 감기고, 묶음 안 피들은 세로로 꺾이지 않아야 한다.',
-      '일반 피 우선 그룹핑, captured-junk-row 기반 opponent-junk-stack, nowrap/고정 열 폭 계약을 유지하세요.'
+      '상대 피 묶음은 고정 2열이 아니라 가용 폭에 맞춰 여러 열로 감기고, 먹은 순서를 다시 섞지 않아야 한다.',
+      '캡처 순서 기반 junk 그룹핑, captured-junk-row 기반 opponent-junk-stack, nowrap/고정 열 폭 계약을 유지하세요.'
     ),
     makeCheck(
       'opponent_no_translate_hacks',

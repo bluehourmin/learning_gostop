@@ -885,13 +885,7 @@ function groupCapturedCards(cards) {
     }
   });
 
-  const sortedJunk = [...junk].sort((a, b) => {
-    const valueDiff = getJunkValue(a) - getJunkValue(b);
-    if (valueDiff !== 0) return valueDiff;
-    const monthDiff = a.month - b.month;
-    if (monthDiff !== 0) return monthDiff;
-    return a.label.localeCompare(b.label, 'ko');
-  });
+  const sortedJunk = [...junk];
 
   const junkRows = [];
   sortedJunk.forEach((card) => {
@@ -912,8 +906,6 @@ function groupCapturedCards(cards) {
     targetRow.cards.push(card);
     targetRow.value += value;
   });
-
-  junkRows.sort((a, b) => a.value - b.value || a.cards.length - b.cards.length);
 
   return {
     bright,
