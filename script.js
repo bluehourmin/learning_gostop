@@ -1855,7 +1855,7 @@ function finishTurn(state, playerIndex) {
   }
   state.players[playerIndex].score = evaluatePlayerScore(state.players[playerIndex]).score;
   if (state.deck.length === 0 || state.players.every((player) => player.hand.length === 0)) {
-    endGame(state, playerIndex, "deck");
+    endGame(state, null, "deck");
     return;
   }
   if (maybeHandleGoStop(state, playerIndex)) {
@@ -1958,11 +1958,13 @@ function endGame(state, winnerIndex = null, endReason = null) {
     player.score = evaluatePlayerScore(player).score;
   });
   const ordered = [...state.players].sort((a, b) => b.score - a.score);
+  const topScore = ordered[0]?.score || 0;
+  const tiedTop = ordered.filter((player) => player.score === topScore).length > 1;
   state.endReason = endReason || state.endReason || "deck";
   state.isDraw = false;
   if (winnerIndex != null) {
     state.winner = winnerIndex;
-  } else if (ordered[0].score <= 0) {
+  } else if (topScore < RULE_CONFIG.stopThreshold || tiedTop) {
     state.winner = null;
     state.isDraw = true;
   } else {
