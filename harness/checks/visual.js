@@ -125,11 +125,11 @@ function runVisualChecks({ files }) {
         && styles.includes('align-content: flex-start;')
         && styles.includes('.opponent-junk-stack')
         && styles.includes('flex-wrap: nowrap;')
-        && styles.includes('width: max-content;')
+        && styles.includes('width: 58px;')
         && script.includes('getJunkValue(a) - getJunkValue(b)')
         && script.includes('captured-junk-row opponent-junk-stack'),
       '상대 피 묶음은 고정 2열이 아니라 가용 폭에 맞춰 여러 열로 감기고, 묶음 안 피들은 세로로 꺾이지 않아야 한다.',
-      '일반 피 우선 그룹핑, captured-junk-row 기반 opponent-junk-stack, nowrap/max-content 계약을 유지하세요.'
+      '일반 피 우선 그룹핑, captured-junk-row 기반 opponent-junk-stack, nowrap/고정 열 폭 계약을 유지하세요.'
     ),
     makeCheck(
       'opponent_no_translate_hacks',

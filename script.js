@@ -916,9 +916,9 @@ function groupCapturedCards(cards) {
   junkRows.sort((a, b) => a.value - b.value || a.cards.length - b.cards.length);
 
   return {
-    bright: sortCapturedCategory(bright),
-    animal: sortCapturedCategory(animal),
-    ribbon: sortCapturedCategory(ribbon),
+    bright,
+    animal,
+    ribbon,
     junkRows: junkRows.map((row) => row.cards)
   };
 }

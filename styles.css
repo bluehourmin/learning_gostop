@@ -1419,6 +1419,9 @@ button {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: visible;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .opponent-bright-slot,
@@ -1451,14 +1454,14 @@ button {
 .opponent-capture-stack {
   position: relative;
   min-height: 40px;
-  width: max-content;
-  max-width: 100%;
+  width: 58px;
+  max-width: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   padding-top: 10px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .opponent-junk-slot {
@@ -1507,10 +1510,23 @@ button {
   flex-wrap: nowrap;
   flex-direction: column;
   justify-content: flex-start;
-  width: max-content;
-  max-width: 100%;
+  width: 58px;
+  max-width: none;
   min-height: 40px;
   overflow: visible;
+}
+
+.opponent-layout-a .opponent-capture-slot {
+  justify-content: flex-start;
+}
+
+.opponent-layout-b .opponent-capture-slot {
+  justify-content: flex-end;
+}
+
+.opponent-layout-a .opponent-junk-slot,
+.opponent-layout-b .opponent-junk-slot {
+  justify-content: flex-start;
 }
 
 .opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
@@ -2480,12 +2496,13 @@ body.viewport-warned .viewport-overlay__panel {
   .opponent-junk-stack {
     flex: 0 0 auto;
     flex-wrap: nowrap;
-    width: max-content;
-    max-width: 100%;
+    width: 50px;
+    max-width: none;
   }
 
   .opponent-capture-stack {
     min-height: 34px;
+    width: 50px;
     padding-top: 8px;
   }
 
