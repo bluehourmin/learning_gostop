@@ -107,11 +107,12 @@ function runVisualChecks({ files }) {
       script.includes('function renderOpponentCapturedLayout')
         && script.includes('seat === 1 ? [brightBlock, middleBlock, junkBlock] : [junkBlock, middleBlock, brightBlock]')
         && styles.includes('.opponent-captured-layout')
-        && styles.includes('grid-template-columns: repeat(2, 88px);')
+        && styles.includes('grid-template-columns: repeat(2, minmax(0, 1fr));')
+        && !script.includes('먹은 패 정리')
         && styles.includes('.opponent-layout-a')
         && styles.includes('.opponent-layout-b'),
-      '상대 먹은 패는 A는 광-중간-피, B는 피-중간-광 순서로 실제 렌더링되고, 처음부터 고정 2열 격자에 놓여야 한다.',
-      'renderOpponentCapturedLayout 전용 구조와 opponent-layout-a/b 고정 격자 계약을 유지하세요.'
+      '상대 먹은 패는 A는 광-중간-피, B는 피-중간-광 순서로 실제 렌더링되고, 라벨 없이 패널 폭을 쓰는 2열 격자에 놓여야 한다.',
+      'renderOpponentCapturedLayout 전용 구조, 라벨 제거, opponent-layout-a/b 확장 격자 계약을 유지하세요.'
     ),
     makeCheck(
       'opponent_directional_spread_contract',

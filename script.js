@@ -2474,7 +2474,6 @@ function renderSeat(player, options = {}) {
     </div>
     ${player.seat === USER_INDEX ? `<p class="seat-comment">${seatComment(player)}</p>` : ""}
     ${player.seat === USER_INDEX ? `<div class="${handClass}">${handHtml}</div>` : ""}
-    <div class="seat-group-label">먹은 패 정리</div>
     <div class="captured-strip organized ${player.seat === USER_INDEX ? "" : "opponent-captured-strip"}"><div class="${publicZoneClass}">${capturedLayout}</div></div>
   `;
   return { seatClass, seatBody };

@@ -1367,9 +1367,9 @@ button {
 
 .opponent-captured-strip {
   overflow: hidden;
-  min-height: 226px;
+  min-height: 250px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   width: 100%;
 }
@@ -1381,8 +1381,8 @@ button {
 
 .public-zone.left-public,
 .public-zone.right-public {
-  width: 256px;
-  min-height: 208px;
+  width: 100%;
+  min-height: 236px;
   transform-origin: center;
 }
 
@@ -1397,11 +1397,11 @@ button {
 }
 
 .opponent-captured-layout {
-  width: 206px;
+  width: 100%;
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(2, 88px);
-  grid-template-rows: 80px 80px 112px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: 86px 86px 128px;
   gap: 8px;
   align-content: center;
   justify-content: center;
@@ -1411,14 +1411,14 @@ button {
   display: grid;
   grid-column: 1 / -1;
   grid-row: 2;
-  grid-template-columns: repeat(2, 88px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .opponent-capture-slot {
   min-width: 0;
   min-height: 76px;
-  width: 88px;
+  width: 100%;
   padding: 4px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
@@ -1478,8 +1478,8 @@ button {
   flex-wrap: wrap-reverse;
   align-content: flex-start;
   justify-content: flex-end;
-  gap: 6px 6px;
-  min-height: 104px;
+  gap: 8px 10px;
+  min-height: 120px;
 }
 
 .opponent-layout-b .opponent-bright-slot {
@@ -1495,6 +1495,7 @@ button {
   grid-row: 1;
   flex-direction: row;
   justify-content: flex-start;
+  align-items: flex-end;
 }
 
 .opponent-stack-label {
@@ -1554,6 +1555,7 @@ button {
 
 .opponent-layout-b .opponent-junk-slot {
   justify-content: flex-end;
+  align-items: flex-end;
 }
 
 .opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
@@ -2491,24 +2493,24 @@ body.viewport-warned .viewport-overlay__panel {
   }
 
   .opponent-captured-strip {
-    min-height: 170px;
+    min-height: 188px;
   }
 
   .opponent-captured-layout {
-    width: 164px;
-    grid-template-columns: repeat(2, 72px);
-    grid-template-rows: 68px 68px 92px;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: 70px 70px 100px;
     gap: 5px;
   }
 
   .opponent-capture-middle {
-    grid-template-columns: repeat(2, 72px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 5px;
   }
 
   .opponent-capture-slot {
     min-height: 64px;
-    width: 72px;
+    width: 100%;
     padding: 3px;
     border-radius: 9px;
   }
