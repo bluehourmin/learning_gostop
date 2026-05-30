@@ -1462,7 +1462,7 @@ button {
   flex-wrap: wrap-reverse;
   align-content: flex-start;
   justify-content: flex-end;
-  gap: 5px 4px;
+  gap: 6px 6px;
   min-height: 104px;
 }
 
@@ -1486,15 +1486,15 @@ button {
 }
 
 .opponent-captured-layout .card-shell.small {
-  width: 56px;
-  height: 40px;
+  width: 40px;
+  height: 54px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .opponent-captured-layout .card-shell.small .card-visual {
-  width: 42px;
+  width: 40px;
   flex: 0 0 auto;
 }
 
@@ -1504,10 +1504,12 @@ button {
   justify-content: flex-start;
   width: max-content;
   max-width: 100%;
+  min-height: 46px;
+  overflow: visible;
 }
 
 .opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
-  margin-left: -39px;
+  margin-left: -28px;
 }
 
 .opponent-layout-b .opponent-capture-stack {
@@ -1515,7 +1517,7 @@ button {
 }
 
 .opponent-layout-b .opponent-capture-stack .card-shell.small + .card-shell.small {
-  margin-right: -39px;
+  margin-right: -28px;
 }
 
 .left-seat .opponent-captured-strip .captured-layout,
@@ -2467,7 +2469,7 @@ body.viewport-warned .viewport-overlay__panel {
   .opponent-junk-slot {
     width: 100%;
     min-height: 84px;
-    gap: 4px 3px;
+    gap: 5px 5px;
   }
 
   .opponent-junk-stack {
@@ -2483,20 +2485,20 @@ body.viewport-warned .viewport-overlay__panel {
   }
 
   .opponent-captured-layout .card-shell.small {
-    width: 50px;
-    height: 36px;
+    width: 34px;
+    height: 46px;
   }
 
   .opponent-captured-layout .card-shell.small .card-visual {
-    width: 38px;
+    width: 34px;
   }
 
   .opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small {
-    margin-left: -35px;
+    margin-left: -24px;
   }
 
   .opponent-layout-b .opponent-capture-stack .card-shell.small + .card-shell.small {
-    margin-right: -35px;
+    margin-right: -24px;
   }
 
   .public-zone.left-public,

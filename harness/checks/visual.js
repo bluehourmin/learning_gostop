@@ -108,12 +108,12 @@ function runVisualChecks({ files }) {
       '상대 A/B 카드 전개 방향이 서로 반대다',
       3,
       styles.includes('.opponent-layout-a .opponent-capture-stack .card-shell.small + .card-shell.small')
-        && styles.includes('margin-left: -39px;')
+        && styles.includes('margin-left: -28px;')
         && styles.includes('.opponent-layout-b .opponent-capture-stack')
         && styles.includes('flex-direction: row-reverse;')
-        && styles.includes('margin-right: -39px;'),
+        && styles.includes('margin-right: -28px;'),
       'A는 오른쪽으로, B는 왼쪽으로 카드가 약 30%만 보이게 겹쳐 전개되어야 한다.',
-      'opponent-layout-a/b 의 margin-left -39px, row-reverse, margin-right -39px 전개 규칙을 유지하세요.'
+      'opponent-layout-a/b 의 margin-left -28px, row-reverse, margin-right -28px 전개 규칙을 유지하세요.'
     ),
     makeCheck(
       'opponent_junk_bottom_wrap_contract',
@@ -125,9 +125,11 @@ function runVisualChecks({ files }) {
         && styles.includes('align-content: flex-start;')
         && styles.includes('.opponent-junk-stack')
         && styles.includes('flex-wrap: nowrap;')
-        && styles.includes('width: max-content;'),
+        && styles.includes('width: max-content;')
+        && script.includes('getJunkValue(a) - getJunkValue(b)')
+        && script.includes('captured-junk-row opponent-junk-stack'),
       '상대 피 묶음은 고정 2열이 아니라 가용 폭에 맞춰 여러 열로 감기고, 묶음 안 피들은 세로로 꺾이지 않아야 한다.',
-      'opponent-junk-slot 의 width: 100%, flex-wrap: wrap-reverse 와 opponent-junk-stack 의 nowrap/max-content 계약을 유지하세요.'
+      '일반 피 우선 그룹핑, captured-junk-row 기반 opponent-junk-stack, nowrap/max-content 계약을 유지하세요.'
     ),
     makeCheck(
       'opponent_no_translate_hacks',

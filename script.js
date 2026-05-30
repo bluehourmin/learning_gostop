@@ -886,7 +886,7 @@ function groupCapturedCards(cards) {
   });
 
   const sortedJunk = [...junk].sort((a, b) => {
-    const valueDiff = getJunkValue(b) - getJunkValue(a);
+    const valueDiff = getJunkValue(a) - getJunkValue(b);
     if (valueDiff !== 0) return valueDiff;
     const monthDiff = a.month - b.month;
     if (monthDiff !== 0) return monthDiff;
@@ -931,7 +931,7 @@ function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
   const junkHtml = groups.junkRows.map((row) => {
     const rowValue = row.reduce((sum, card) => sum + getJunkValue(card), 0);
     return `
-      <div class="opponent-capture-stack opponent-junk-stack">
+      <div class="opponent-capture-stack captured-junk-row opponent-junk-stack">
         <span class="opponent-stack-label">피 ${rowValue}</span>
         ${row.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) + (getJunkValue(card) >= 2 ? " junk-double" : "") })).join("")}
       </div>
