@@ -917,30 +917,41 @@ function groupCapturedCards(cards) {
 
 function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
   const sideClass = seat === 1 ? " opponent-layout-a" : " opponent-layout-b";
-  const brightHtml = groups.bright.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
-  const ribbonHtml = groups.ribbon.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
-  const animalHtml = groups.animal.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) })).join("");
+  const stackStep = 12;
+  const stackStyle = (cards) => ` style="--opponent-stack-height: ${40 + Math.max(0, cards.length - 1) * stackStep}px;"`;
+  const renderOpponentStackCards = (cards, extraClassForCard = () => "") => cards.map((card, index) => {
+    const offsetIndex = seat === 2 ? cards.length - 1 - index : index;
+    const zIndex = seat === 2 ? cards.length - index : index + 1;
+    return renderCardVisual(card, {
+      small: true,
+      extraClass: (buildExtraClass(card) + " " + extraClassForCard(card)).trim(),
+      style: `--opponent-stack-offset: ${offsetIndex * stackStep}px; --opponent-stack-z: ${zIndex};`
+    });
+  }).join("");
+  const brightHtml = renderOpponentStackCards(groups.bright);
+  const ribbonHtml = renderOpponentStackCards(groups.ribbon);
+  const animalHtml = renderOpponentStackCards(groups.animal);
   const junkHtml = groups.junkRows.map((row) => {
     const rowValue = row.reduce((sum, card) => sum + getJunkValue(card), 0);
     return `
-      <div class="opponent-capture-stack captured-junk-row opponent-junk-stack">
+      <div class="opponent-capture-stack captured-junk-row opponent-junk-stack"${stackStyle(row)}>
         <span class="opponent-stack-label">피 ${rowValue}</span>
-        ${row.map((card) => renderCardVisual(card, { small: true, extraClass: buildExtraClass(card) + (getJunkValue(card) >= 2 ? " junk-double" : "") })).join("")}
+        ${renderOpponentStackCards(row, (card) => getJunkValue(card) >= 2 ? "junk-double" : "")}
       </div>
     `;
   }).join("");
   const brightBlock = `
     <div class="opponent-capture-slot opponent-bright-slot${brightHtml ? "" : " is-empty"}">
-      <div class="opponent-capture-stack">${brightHtml}</div>
+      <div class="opponent-capture-stack"${stackStyle(groups.bright)}>${brightHtml}</div>
     </div>
   `;
   const middleBlock = `
     <div class="opponent-capture-middle${(!ribbonHtml && !animalHtml) ? " is-empty" : ""}">
       <div class="opponent-capture-slot opponent-ribbon-slot${ribbonHtml ? "" : " is-empty"}">
-        <div class="opponent-capture-stack">${ribbonHtml}</div>
+        <div class="opponent-capture-stack"${stackStyle(groups.ribbon)}>${ribbonHtml}</div>
       </div>
       <div class="opponent-capture-slot opponent-animal-slot${animalHtml ? "" : " is-empty"}">
-        <div class="opponent-capture-stack">${animalHtml}</div>
+        <div class="opponent-capture-stack"${stackStyle(groups.animal)}>${animalHtml}</div>
       </div>
     </div>
   `;
@@ -2316,9 +2327,10 @@ function renderCardVisual(card, options = {}) {
   const sizeClass = options.small ? " small" : "";
   const hiddenClass = options.hidden ? " hidden" : "";
   const extraClass = options.extraClass ? " " + options.extraClass.trim() : "";
+  const style = options.style ? ` style="${options.style}"` : "";
   const tooltip = options.tooltip ? ` data-tooltip="${options.tooltip}"` : "";
   return `
-    <div class="card-shell${recommendationClass}${playableClass}${sizeClass}${hiddenClass}${extraClass}" title="${card.label}"${tooltip}>
+    <div class="card-shell${recommendationClass}${playableClass}${sizeClass}${hiddenClass}${extraClass}" title="${card.label}"${style}${tooltip}>
       <div class="card-visual">
         ${buildCardFace(card, options)}
         ${card.type === "joker" && !options.hidden ? `<div class="card-label-overlay">조커</div>` : ""}
