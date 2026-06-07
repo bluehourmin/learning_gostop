@@ -885,7 +885,11 @@ function groupCapturedCards(cards) {
     }
   });
 
-  const sortedJunk = [...junk];
+  const sortedJunk = [...junk].sort((a, b) => {
+    const valueDiff = getJunkValue(a) - getJunkValue(b);
+    if (valueDiff !== 0) return valueDiff;
+    return junk.indexOf(a) - junk.indexOf(b);
+  });
 
   const junkRows = [];
   sortedJunk.forEach((card) => {
@@ -919,6 +923,7 @@ function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
   const sideClass = seat === 1 ? " opponent-layout-a" : " opponent-layout-b";
   const stackStep = 12;
   const stackStyle = (cards) => ` style="--opponent-stack-height: ${40 + Math.max(0, cards.length - 1) * stackStep}px;"`;
+  const junkRowStyle = (cards) => ` style="--opponent-junk-row-width: ${58 + Math.max(0, cards.length - 1) * stackStep}px;"`;
   const renderOpponentStackCards = (cards, extraClassForCard = () => "") => cards.map((card, index) => {
     const offsetIndex = seat === 2 ? cards.length - 1 - index : index;
     const zIndex = seat === 2 ? cards.length - index : index + 1;
@@ -928,15 +933,23 @@ function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
       style: `--opponent-stack-offset: ${offsetIndex * stackStep}px; --opponent-stack-z: ${zIndex};`
     });
   }).join("");
+  const renderOpponentJunkCards = (cards) => cards.map((card, index) => {
+    const zIndex = index + 1;
+    return renderCardVisual(card, {
+      small: true,
+      extraClass: (buildExtraClass(card) + " opponent-junk-card" + (getJunkValue(card) >= 2 ? " junk-double" : "")).trim(),
+      style: `--opponent-junk-offset: ${index * stackStep}px; --opponent-stack-z: ${zIndex};`
+    });
+  }).join("");
   const brightHtml = renderOpponentStackCards(groups.bright);
   const ribbonHtml = renderOpponentStackCards(groups.ribbon);
   const animalHtml = renderOpponentStackCards(groups.animal);
   const junkHtml = groups.junkRows.map((row) => {
     const rowValue = row.reduce((sum, card) => sum + getJunkValue(card), 0);
     return `
-      <div class="opponent-capture-stack captured-junk-row opponent-junk-stack"${stackStyle(row)}>
+      <div class="opponent-capture-stack captured-junk-row opponent-junk-stack"${junkRowStyle(row)}>
         <span class="opponent-stack-label">피 ${rowValue}</span>
-        ${renderOpponentStackCards(row, (card) => getJunkValue(card) >= 2 ? "junk-double" : "")}
+        ${renderOpponentJunkCards(row)}
       </div>
     `;
   }).join("");

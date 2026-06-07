@@ -136,11 +136,12 @@ function runVisualChecks({ files }) {
         && styles.includes('align-content: flex-start;')
         && styles.includes('.opponent-junk-stack')
         && styles.includes('flex-wrap: nowrap;')
-        && styles.includes('width: 58px;')
-        && script.includes('const sortedJunk = [...junk];')
+        && styles.includes('width: var(--opponent-junk-row-width, 58px);')
+        && script.includes('const remaining = 5 - row.value;')
+        && script.includes('targetRow.value += value;')
         && script.includes('captured-junk-row opponent-junk-stack'),
-      '상대 피 묶음은 고정 2열이 아니라 가용 폭에 맞춰 여러 열로 감기고, 먹은 순서를 다시 섞지 않아야 한다.',
-      '캡처 순서 기반 junk 그룹핑, captured-junk-row 기반 opponent-junk-stack, nowrap/고정 열 폭 계약을 유지하세요.'
+      '상대 피 묶음은 피값 5 기준으로 줄을 만들고, 한 줄 안 카드는 가로로 펼쳐져야 한다.',
+      '피값 5 기반 그룹핑, captured-junk-row 기반 opponent-junk-stack, 가변 row width/nowrap 계약을 유지하세요.'
     ),
     makeCheck(
       'opponent_no_translate_hacks',

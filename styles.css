@@ -1534,10 +1534,16 @@ button {
 .opponent-junk-stack {
   flex: 0 0 auto;
   flex-wrap: nowrap;
-  width: 58px;
+  width: var(--opponent-junk-row-width, 58px);
   max-width: none;
-  min-height: calc(12px + var(--opponent-stack-height, 40px));
+  min-height: 52px;
+  height: 52px;
   overflow: visible;
+}
+
+.opponent-captured-layout .opponent-junk-stack .card-shell.small {
+  top: 12px;
+  left: var(--opponent-junk-offset, 0px);
 }
 
 .opponent-layout-a .opponent-capture-slot {
