@@ -54,9 +54,9 @@
       "피는 아래줄부터 5장씩 쌓아 위로 올라가게 정리한다"
     ],
     "codePatterns": [
-      "const value = getJunkValue(card);",
-      "const remaining = 5 - row.value;",
-      "targetRow.value += value;"
+      "function buildJunkRows(junk)",
+      "remainderValue = junk.reduce((sum, card) => sum + getJunkValue(card), 0) % 5",
+      "doubles.length >= 1 && singles.length >= 3"
     ]
   },
   {

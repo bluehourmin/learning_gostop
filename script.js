@@ -885,31 +885,7 @@ function groupCapturedCards(cards) {
     }
   });
 
-  const sortedJunk = [...junk].sort((a, b) => {
-    const valueDiff = getJunkValue(a) - getJunkValue(b);
-    if (valueDiff !== 0) return valueDiff;
-    return junk.indexOf(a) - junk.indexOf(b);
-  });
-
-  const junkRows = [];
-  sortedJunk.forEach((card) => {
-    const value = getJunkValue(card);
-    let targetRow = null;
-    for (const row of junkRows) {
-      const remaining = 5 - row.value;
-      if (remaining >= value) {
-        if (!targetRow || remaining < (5 - targetRow.value)) {
-          targetRow = row;
-        }
-      }
-    }
-    if (!targetRow) {
-      targetRow = { cards: [], value: 0 };
-      junkRows.push(targetRow);
-    }
-    targetRow.cards.push(card);
-    targetRow.value += value;
-  });
+  const junkRows = buildJunkRows(junk);
 
   return {
     bright,
@@ -917,6 +893,61 @@ function groupCapturedCards(cards) {
     ribbon,
     junkRows: junkRows.map((row) => row.cards)
   };
+}
+
+function buildJunkRows(junk) {
+  const singles = junk.filter((card) => getJunkValue(card) === 1);
+  const doubles = junk.filter((card) => getJunkValue(card) >= 2);
+  const rows = [];
+  const remainder = [];
+  const remainderValue = junk.reduce((sum, card) => sum + getJunkValue(card), 0) % 5;
+  const takeSingles = (count) => {
+    if (singles.length < count) return false;
+    for (let index = 0; index < count; index += 1) remainder.push(singles.shift());
+    return true;
+  };
+  const takeDoubles = (count) => {
+    if (doubles.length < count) return false;
+    for (let index = 0; index < count; index += 1) remainder.push(doubles.shift());
+    return true;
+  };
+  const reserveRemainder = () => {
+    if (remainderValue === 0) return true;
+    if (remainderValue === 1) return takeSingles(1);
+    if (remainderValue === 2) {
+      if (singles.length >= 2) return takeSingles(2);
+      return takeDoubles(1);
+    }
+    if (remainderValue === 3) {
+      if (singles.length >= 3) return takeSingles(3);
+      if (doubles.length >= 1 && singles.length >= 1) return takeDoubles(1) && takeSingles(1);
+      return false;
+    }
+    if (singles.length >= 4) return takeSingles(4);
+    if (doubles.length >= 1 && singles.length >= 2) return takeDoubles(1) && takeSingles(2);
+    return takeDoubles(2);
+  };
+  if (!reserveRemainder()) {
+    singles.unshift(...remainder.filter((card) => getJunkValue(card) === 1));
+    doubles.unshift(...remainder.filter((card) => getJunkValue(card) >= 2));
+    remainder.length = 0;
+  }
+
+  while (singles.length || doubles.length) {
+    if (doubles.length >= 1 && singles.length >= 3) {
+      rows.push([doubles.shift(), singles.shift(), singles.shift(), singles.shift()]);
+    } else if (doubles.length >= 2 && singles.length >= 1) {
+      rows.push([doubles.shift(), doubles.shift(), singles.shift()]);
+    } else if (singles.length >= 5) {
+      rows.push([singles.shift(), singles.shift(), singles.shift(), singles.shift(), singles.shift()]);
+    } else {
+      rows.push([...doubles.splice(0), ...singles.splice(0)]);
+      break;
+    }
+  }
+
+  if (remainder.length) rows.push(remainder);
+  return rows;
 }
 
 function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
