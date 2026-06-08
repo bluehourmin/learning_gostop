@@ -136,14 +136,13 @@ function runVisualChecks({ files }) {
         && styles.includes('align-content: flex-start;')
         && styles.includes('.opponent-junk-stack')
         && styles.includes('flex-wrap: nowrap;')
-        && styles.includes('width: var(--opponent-junk-row-width, 58px);')
-        && script.includes('const junkStep = 18;')
-        && script.includes('index * junkStep')
+        && styles.includes('width: 58px;')
+        && script.includes('renderOpponentStackCards(row, (card) => getJunkValue(card) >= 2 ? "junk-double" : "")')
         && script.includes('const remaining = 5 - row.value;')
         && script.includes('targetRow.value += value;')
         && script.includes('captured-junk-row opponent-junk-stack'),
-      '상대 피 묶음은 피값 5 기준으로 줄을 만들고, 한 줄 안 카드는 가로로 펼쳐져야 한다.',
-      '피값 5 기반 그룹핑, captured-junk-row 기반 opponent-junk-stack, 가변 row width/nowrap 계약을 유지하세요.'
+      '상대 피 묶음은 피값 5 기준으로 줄을 만들고, 광/띠/열끗과 같은 좌석 방향 스택 규칙을 써야 한다.',
+      '피값 5 기반 그룹핑과 renderOpponentStackCards 기반 opponent-junk-stack 계약을 유지하세요.'
     ),
     makeCheck(
       'opponent_no_translate_hacks',

@@ -922,9 +922,7 @@ function groupCapturedCards(cards) {
 function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
   const sideClass = seat === 1 ? " opponent-layout-a" : " opponent-layout-b";
   const stackStep = 12;
-  const junkStep = 18;
   const stackStyle = (cards) => ` style="--opponent-stack-height: ${40 + Math.max(0, cards.length - 1) * stackStep}px;"`;
-  const junkRowStyle = (cards) => ` style="--opponent-junk-row-width: ${58 + Math.max(0, cards.length - 1) * junkStep}px;"`;
   const renderOpponentStackCards = (cards, extraClassForCard = () => "") => cards.map((card, index) => {
     const offsetIndex = seat === 2 ? cards.length - 1 - index : index;
     const zIndex = seat === 2 ? cards.length - index : index + 1;
@@ -934,23 +932,15 @@ function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
       style: `--opponent-stack-offset: ${offsetIndex * stackStep}px; --opponent-stack-z: ${zIndex};`
     });
   }).join("");
-  const renderOpponentJunkCards = (cards) => cards.map((card, index) => {
-    const zIndex = index + 1;
-    return renderCardVisual(card, {
-      small: true,
-      extraClass: (buildExtraClass(card) + " opponent-junk-card" + (getJunkValue(card) >= 2 ? " junk-double" : "")).trim(),
-      style: `--opponent-junk-offset: ${index * junkStep}px; --opponent-stack-z: ${zIndex};`
-    });
-  }).join("");
   const brightHtml = renderOpponentStackCards(groups.bright);
   const ribbonHtml = renderOpponentStackCards(groups.ribbon);
   const animalHtml = renderOpponentStackCards(groups.animal);
   const junkHtml = groups.junkRows.map((row) => {
     const rowValue = row.reduce((sum, card) => sum + getJunkValue(card), 0);
     return `
-      <div class="opponent-capture-stack captured-junk-row opponent-junk-stack"${junkRowStyle(row)}>
+      <div class="opponent-capture-stack captured-junk-row opponent-junk-stack"${stackStyle(row)}>
         <span class="opponent-stack-label">피 ${rowValue}</span>
-        ${renderOpponentJunkCards(row)}
+        ${renderOpponentStackCards(row, (card) => getJunkValue(card) >= 2 ? "junk-double" : "")}
       </div>
     `;
   }).join("");
