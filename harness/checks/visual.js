@@ -137,6 +137,8 @@ function runVisualChecks({ files }) {
         && styles.includes('.opponent-junk-stack')
         && styles.includes('flex-wrap: nowrap;')
         && styles.includes('width: var(--opponent-junk-row-width, 58px);')
+        && script.includes('const junkStep = 18;')
+        && script.includes('index * junkStep')
         && script.includes('const remaining = 5 - row.value;')
         && script.includes('targetRow.value += value;')
         && script.includes('captured-junk-row opponent-junk-stack'),

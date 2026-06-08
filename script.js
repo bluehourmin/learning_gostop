@@ -922,8 +922,9 @@ function groupCapturedCards(cards) {
 function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
   const sideClass = seat === 1 ? " opponent-layout-a" : " opponent-layout-b";
   const stackStep = 12;
+  const junkStep = 18;
   const stackStyle = (cards) => ` style="--opponent-stack-height: ${40 + Math.max(0, cards.length - 1) * stackStep}px;"`;
-  const junkRowStyle = (cards) => ` style="--opponent-junk-row-width: ${58 + Math.max(0, cards.length - 1) * stackStep}px;"`;
+  const junkRowStyle = (cards) => ` style="--opponent-junk-row-width: ${58 + Math.max(0, cards.length - 1) * junkStep}px;"`;
   const renderOpponentStackCards = (cards, extraClassForCard = () => "") => cards.map((card, index) => {
     const offsetIndex = seat === 2 ? cards.length - 1 - index : index;
     const zIndex = seat === 2 ? cards.length - index : index + 1;
@@ -938,7 +939,7 @@ function renderOpponentCapturedLayout(groups, buildExtraClass, seat) {
     return renderCardVisual(card, {
       small: true,
       extraClass: (buildExtraClass(card) + " opponent-junk-card" + (getJunkValue(card) >= 2 ? " junk-double" : "")).trim(),
-      style: `--opponent-junk-offset: ${index * stackStep}px; --opponent-stack-z: ${zIndex};`
+      style: `--opponent-junk-offset: ${index * junkStep}px; --opponent-stack-z: ${zIndex};`
     });
   }).join("");
   const brightHtml = renderOpponentStackCards(groups.bright);
